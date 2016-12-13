@@ -56,6 +56,8 @@ public:
 
 	virtual void interact_spikes_with_synapses(SpikingNeurons * neurons, SpikingNeurons * input_neurons, float current_time_in_seconds, float timestep);
 
+	void reset_time_related_synapse_activities();
+
 };
 
 __global__ void move_spikes_towards_synapses_kernel(int* d_presynaptic_neuron_indices,

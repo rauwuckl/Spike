@@ -125,23 +125,29 @@ void Simulator::RunSimulation(SpikeAnalyser *spike_analyser) {
 	// Set seed for stimulus presentation order
 	srand(simulator_options->run_simulation_general_options->stimulus_presentation_order_seed);
 
-
-	reset_all_recording_electrodes();
-
 	if (simulator_options->file_storage_options->write_initial_synaptic_weights_to_file_bool) {
 	
 		network_state_archive_recording_electrodes->write_initial_synaptic_weights_to_file();
 	
 	}
 
+	float current_time_in_seconds = 0.0f;
+
 	for (int epoch_number = 0; epoch_number < simulator_options->run_simulation_general_options->number_of_epochs; epoch_number++) {
 
 		TimerWithMessages * epoch_timer = new TimerWithMessages();
 		printf("Starting Epoch: %d\n", epoch_number);
 
-		spiking_model->reset_model_activities();
+		reset_all_recording_electrodes();
 
-		float current_time_in_seconds = 0.0f;
+		if (simulator_options->run_simulation_general_options->reset_model_activities_between_epochs) {
+			spiking_model->reset_model_activities();
+			current_time_in_seconds = 0.0f;
+		} else {
+			// current_time_in_seconds = 0.0f;
+			// spiking_model->reset_time_related_model_activities();
+		}
+		
 
 		int* stimuli_presentation_order = setup_stimuli_presentation_order();
 		for (int stimulus_index = 0; stimulus_index < spiking_model->input_spiking_neurons->total_number_of_input_stimuli; stimulus_index++) {
@@ -155,7 +161,7 @@ void Simulator::RunSimulation(SpikeAnalyser *spike_analyser) {
 			// ((FourLayerVisionSpikingModel*)spiking_model)->image_poisson_input_spiking_neurons->setup_random_states_on_device();
 
 			int number_of_timesteps_per_stimulus_per_epoch = simulator_options->run_simulation_general_options->presentation_time_per_stimulus_per_epoch / spiking_model->timestep;
-		
+			printf("number_of_timesteps_per_stimulus_per_epoch: %d\n", number_of_timesteps_per_stimulus_per_epoch);
 
 			for (int timestep_index = 0; timestep_index < number_of_timesteps_per_stimulus_per_epoch; timestep_index++){
 				
@@ -163,11 +169,13 @@ void Simulator::RunSimulation(SpikeAnalyser *spike_analyser) {
 
 				perform_per_timestep_recording_electrode_instructions(current_time_in_seconds, timestep_index, number_of_timesteps_per_stimulus_per_epoch);
 
-				current_time_in_seconds += float(spiking_model->timestep);
+				// current_time_in_seconds += float(spiking_model->timestep);
+				current_time_in_seconds += spiking_model->timestep;
+				// printf("timestep: %f\n", spiking_model->timestep);
 
 			}
 
-			perform_post_stimulus_presentation_instructions(spike_analyser);
+			perform_post_stimulus_presentation_instructions(spike_analyser, epoch_number);
 			
 		}
 
@@ -299,7 +307,7 @@ void Simulator::perform_per_timestep_recording_electrode_instructions(float curr
 
 void Simulator::perform_pre_stimulus_presentation_instructions(int stimulus_index) {
 
-	printf("Stimulus Index: %d\n", stimulus_index);
+	printf("\tStimulus Index: %d\n", stimulus_index);
 	// printf("simulator_options->stimuli_presentation_options->presentation_format: %d\n", simulator_options->stimuli_presentation_options->presentation_format);
 
 	switch (simulator_options->stimuli_presentation_options->presentation_format) {
@@ -334,13 +342,15 @@ void Simulator::perform_pre_stimulus_presentation_instructions(int stimulus_inde
 
 
 
-void Simulator::perform_post_stimulus_presentation_instructions(SpikeAnalyser * spike_analyser) {
+void Simulator::perform_post_stimulus_presentation_instructions(SpikeAnalyser * spike_analyser, int epoch_number) {
 
-	if (simulator_options->recording_electrodes_options->count_neuron_spikes_recording_electrodes_bool && spike_analyser) {
+	if (simulator_options->recording_electrodes_options->count_neuron_spikes_recording_electrodes_bool && spike_analyser && simulator_options->run_simulation_general_options->specific_epoch_to_pass_to_spike_analyser == epoch_number) {
 
 		spike_analyser->store_spike_counts_for_stimulus_index(spiking_model->input_spiking_neurons->current_stimulus_index, count_neuron_spikes_recording_electrodes->d_per_neuron_spike_counts);
 		count_neuron_spikes_recording_electrodes->reset_pointers_for_spike_count();
 
+		// spike_analyser->store_spike_counts_for_stimulus_index(spiking_model->input_spiking_neurons->current_stimulus_index, count_input_neuron_spikes_recording_electrodes->d_per_neuron_spike_counts);
+		// count_input_neuron_spikes_recording_electrodes->reset_pointers_for_spike_count();
 	}
 
 }

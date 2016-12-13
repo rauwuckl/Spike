@@ -144,7 +144,7 @@ void SpikeAnalyser::calculate_various_neuron_spike_totals_and_averages(float pre
 		int neuron_group_start_index = neurons->start_neuron_indices_for_each_group[neuron_group_index];
 		int neuron_group_end_index = neurons->last_neuron_indices_for_each_group[neuron_group_index];
 		int number_of_neurons_in_group = neuron_group_end_index - neuron_group_start_index + 1;
-		printf("\n* neuron group %d (%d neurons) *\n", neuron_group_index,number_of_neurons_in_group);
+		// printf("\n* neuron group %d (%d neurons) *\n", neuron_group_index,number_of_neurons_in_group);
 	
 		total_number_of_spikes_per_neuron_group[neuron_group_index] = 0;
 
@@ -170,23 +170,24 @@ void SpikeAnalyser::calculate_various_neuron_spike_totals_and_averages(float pre
 				
 				if (tmp_max_number_of_neuron_spikes_per_stimulus<per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index_zeroed+neuron_group_start_index])
 					tmp_max_number_of_neuron_spikes_per_stimulus = per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index_zeroed+neuron_group_start_index];
+			
 			}	
-			// printf("total_number_of_non_silent_neurons_in_group_for_stimulus: %d\n", total_number_of_non_silent_neurons_in_group_for_stimulus);		
+
 			average_number_of_spikes_per_stimulus_per_neuron_group_per_second[neuron_group_index][stimulus_index] = ((float)number_of_spikes_per_stimulus_per_neuron_group[neuron_group_index][stimulus_index]/(float)number_of_neurons_in_group) / presentation_time_per_stimulus_per_epoch;
-			average_number_of_spikes_per_stimulus_per_neuron_group_per_second_excluding_silent_neurons[neuron_group_index][stimulus_index] = ((float)number_of_spikes_per_stimulus_per_neuron_group[neuron_group_index][stimulus_index]/(float)total_number_of_non_silent_neurons_in_group_for_stimulus) / presentation_time_per_stimulus_per_epoch;
+			average_number_of_spikes_per_stimulus_per_neuron_group_per_second_excluding_silent_neurons[neuron_group_index][stimulus_index] = (total_number_of_non_silent_neurons_in_group_for_stimulus > 0) ? ((float)number_of_spikes_per_stimulus_per_neuron_group[neuron_group_index][stimulus_index]/(float)total_number_of_non_silent_neurons_in_group_for_stimulus) / presentation_time_per_stimulus_per_epoch : 0;
 			printf("\tnumber of spikes per neuron for stimulus %d -- max: %f\tavg: %f\tavg excluding silent: %f\n", stimulus_index, ((float)tmp_max_number_of_neuron_spikes_per_stimulus)/presentation_time_per_stimulus_per_epoch,average_number_of_spikes_per_stimulus_per_neuron_group_per_second[neuron_group_index][stimulus_index], average_number_of_spikes_per_stimulus_per_neuron_group_per_second_excluding_silent_neurons[neuron_group_index][stimulus_index]);
 
 			total_number_of_spikes_per_neuron_group[neuron_group_index] += number_of_spikes_per_stimulus_per_neuron_group[neuron_group_index][stimulus_index];
 
-			// printf("number_of_spikes_per_stimulus_per_neuron_group[%d][%d]: %d\n", neuron_group_index, stimulus_index, number_of_spikes_per_stimulus_per_neuron_group[neuron_group_index][stimulus_index]);
-			// printf("total_number_of_spikes_per_neuron_group[neuron_group_index]: %d\n", total_number_of_spikes_per_neuron_group[neuron_group_index]);
-
+			if (stimulus_index == input_neurons->total_number_of_input_stimuli - 1) {
+				printf("total_number_of_spikes_per_neuron_group[neuron_group_index]: %d\n", total_number_of_spikes_per_neuron_group[neuron_group_index]);
+			}
 		}
 		
 		max_number_of_spikes_per_neuron_group_per_second[neuron_group_index] = ((float)tmp_max_number_of_neuron_spikes)/presentation_time_per_stimulus_per_epoch;
 		
 		average_number_of_spikes_per_neuron_group_per_second[neuron_group_index] = (((float)total_number_of_spikes_per_neuron_group[neuron_group_index] / (float)number_of_neurons_in_group) / presentation_time_per_stimulus_per_epoch) / (float)input_neurons->total_number_of_input_stimuli;
-		average_number_of_spikes_per_neuron_group_per_second_excluding_silent_neurons[neuron_group_index] = (((float)total_number_of_spikes_per_neuron_group[neuron_group_index] / (float)running_count_of_non_silent_neurons_in_group) / presentation_time_per_stimulus_per_epoch);
+		average_number_of_spikes_per_neuron_group_per_second_excluding_silent_neurons[neuron_group_index] = total_number_of_spikes_per_neuron_group[neuron_group_index] ? (((float)total_number_of_spikes_per_neuron_group[neuron_group_index] / (float)running_count_of_non_silent_neurons_in_group) / presentation_time_per_stimulus_per_epoch) : 0;
 		printf("-- summary -- number of spikes per neuron -- max: %f\tavg: %f\n", max_number_of_spikes_per_neuron_group_per_second[neuron_group_index], average_number_of_spikes_per_neuron_group_per_second[neuron_group_index]);
 
 		total_number_of_neuron_spikes += total_number_of_spikes_per_neuron_group[neuron_group_index];

@@ -73,10 +73,12 @@ __global__ void add_spikes_to_per_neuron_spike_count_kernel(float* d_last_spike_
 	while (idx < total_number_of_neurons) {
 
 		if (d_last_spike_time_of_each_neuron[idx] == current_time_in_seconds) {
+			// if (idx == 173) printf("current_time_in_seconds: %f\n", current_time_in_seconds);
 			atomicAdd(&d_per_neuron_spike_counts[idx], 1);
 		}
 
 		// if (idx == 1000) printf("d_per_neuron_spike_counts[idx]: %d\n", d_per_neuron_spike_counts[idx]);
 		idx += blockDim.x * gridDim.x;
 	}
+	__syncthreads();
 }

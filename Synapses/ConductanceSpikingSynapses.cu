@@ -41,6 +41,8 @@ void ConductanceSpikingSynapses::AddGroup(int presynaptic_group_id,
 						Neurons * input_neurons,
 						float timestep,
 						synapse_parameters_struct * synapse_params) {
+
+	int original_number_of_synapses = total_number_of_synapses;
 	
 	
 	SpikingSynapses::AddGroup(presynaptic_group_id, 
@@ -52,7 +54,9 @@ void ConductanceSpikingSynapses::AddGroup(int presynaptic_group_id,
 
 	conductance_spiking_synapse_parameters_struct * conductance_spiking_synapse_group_params = (conductance_spiking_synapse_parameters_struct*)synapse_params;
 
-	for (int i = (total_number_of_synapses - temp_number_of_synapses_in_last_group); i < total_number_of_synapses; i++) {
+	// for (int i = (total_number_of_synapses - temp_number_of_synapses_in_last_group); i < total_number_of_synapses; i++) {
+		// printf("i: %d\n", i);
+	for (int i = original_number_of_synapses; i < total_number_of_synapses; i++){
 		synaptic_conductances_g[i] = 0.0f;
 		biological_conductance_scaling_constants_lambda[i] = conductance_spiking_synapse_group_params->biological_conductance_scaling_constant_lambda;
 		reversal_potentials_Vhat[i] = conductance_spiking_synapse_group_params->reversal_potential_Vhat;

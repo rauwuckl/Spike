@@ -118,6 +118,8 @@ void SpikingModel::copy_model_to_device() {
 	spiking_neurons->copy_constants_to_device();
 	input_spiking_neurons->copy_constants_to_device();
 
+	reset_model_activities();
+
 	#ifndef SILENCE_MODEL_SETUP
 	timer->stop_timer_and_log_time_and_message("Network Setup.", true);
 	#endif
@@ -128,11 +130,20 @@ void SpikingModel::copy_model_to_device() {
 
 void SpikingModel::reset_model_activities() {
 
+	printf("reset_model_activities\n");
+
 	spiking_neurons->reset_neuron_activities();
 	input_spiking_neurons->reset_neuron_activities();
 	spiking_synapses->reset_synapse_activities();
 	stdp_rule->reset_STDP_activities();
 
+}
+
+
+void SpikingModel::reset_time_related_model_activities() {
+	spiking_neurons->reset_time_related_neuron_activities();
+	input_spiking_neurons->reset_time_related_neuron_activities();
+	spiking_synapses->reset_time_related_synapse_activities();
 }
 
 

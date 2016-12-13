@@ -30,7 +30,7 @@ struct Simulator_Recording_Electrodes_To_Use_Struct {
 													network_state_archive_recording_electrodes_bool(false), 
 													collect_neuron_spikes_optional_parameters(new Collect_Neuron_Spikes_Optional_Parameters()),
 													collect_input_neuron_spikes_optional_parameters(new Collect_Neuron_Spikes_Optional_Parameters()),
-													network_state_archive_optional_parameters(new Network_State_Archive_Optional_Parameters()) 
+													network_state_archive_optional_parameters(new Network_State_Archive_Optional_Parameters())
 													{}
 
 	bool count_neuron_spikes_recording_electrodes_bool;
@@ -51,7 +51,10 @@ struct Simulator_Run_Simulation_General_Options {
 	Simulator_Run_Simulation_General_Options(): presentation_time_per_stimulus_per_epoch(0.1), 
 												number_of_epochs(1), 
 												apply_stdp_to_relevant_synapses(false), 
-												stimulus_presentation_order_seed(1) 
+												stimulus_presentation_order_seed(1),
+												reset_current_time_between_each_stimulus(false),
+												reset_model_activities_between_epochs(false),
+												specific_epoch_to_pass_to_spike_analyser(0)
 												{}
 
 
@@ -60,6 +63,8 @@ struct Simulator_Run_Simulation_General_Options {
 	bool apply_stdp_to_relevant_synapses;
 	int stimulus_presentation_order_seed;
 	bool reset_current_time_between_each_stimulus;
+	bool reset_model_activities_between_epochs;
+	int specific_epoch_to_pass_to_spike_analyser;
 
 };
 
@@ -169,7 +174,7 @@ protected:
 
 	void perform_per_timestep_recording_electrode_instructions(float current_time_in_seconds, int timestep_index, int number_of_timesteps_per_stimulus_per_epoch);
 	void perform_pre_stimulus_presentation_instructions(int stimulus_index);
-	void perform_post_stimulus_presentation_instructions(SpikeAnalyser* spike_analyser);
+	void perform_post_stimulus_presentation_instructions(SpikeAnalyser* spike_analyser, int epoch_number);
 	void perform_post_epoch_instructions(int epoch_number, TimerWithMessages * epoch_timer);
 	void perform_end_of_simulation_instructions(TimerWithMessages * simulation_timer);
 };

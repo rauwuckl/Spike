@@ -54,6 +54,7 @@ public:
 	void AddSynapseGroupsForNeuronGroupAndEachInputGroup(int postsynaptic_group_id, synapse_parameters_struct * synapse_params);
 
 	void reset_model_activities();
+	void reset_time_related_model_activities();
 	void perform_per_timestep_model_instructions(float current_time_in_seconds, bool apply_stdp_to_relevant_synapses);
 
 	virtual void finalise_model();

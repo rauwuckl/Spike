@@ -23,7 +23,7 @@ struct Optimiser_Options {
 						number_of_non_input_layers_to_simulate(1),
 						index_of_neuron_group_of_interest(0),
 						initial_optimisation_parameter_min(1.0f*pow(10, -12)),
-						initial_optimisation_parameter_max(1.0*pow(10, 0)),
+						initial_optimisation_parameter_max(0.5*pow(10, 0)),
 						ideal_output_score(100.0),
 						optimisation_minimum_error(1.0),
 						positive_effect_of_postive_change_in_parameter(true),

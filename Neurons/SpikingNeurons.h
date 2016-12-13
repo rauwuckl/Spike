@@ -46,6 +46,7 @@ public:
 	virtual void reset_neuron_activities();
 	virtual void update_membrane_potentials(float timestep, float current_time_in_seconds);
 	virtual void check_for_neuron_spikes(float current_time_in_seconds, float timestep);
+	void reset_time_related_neuron_activities();
 
 };
 

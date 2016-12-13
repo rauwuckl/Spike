@@ -97,7 +97,15 @@ void SpikingNeurons::reset_neuron_activities() {
 
 	Neurons::reset_neuron_activities();
 
-	// Set last spike times to -1000 so that the times do not affect current simulation.
+	reset_time_related_neuron_activities();
+
+	CudaSafeCall(cudaMemcpy(d_membrane_potentials_v, after_spike_reset_membrane_potentials_c, sizeof(float)*total_number_of_neurons, cudaMemcpyHostToDevice));
+
+}
+
+
+void SpikingNeurons::reset_time_related_neuron_activities() {
+
 	float* last_spike_times;
 	last_spike_times = (float*)malloc(sizeof(float)*total_number_of_neurons);
 	for (int i=0; i < total_number_of_neurons; i++){
@@ -105,11 +113,11 @@ void SpikingNeurons::reset_neuron_activities() {
 	}
 
 	CudaSafeCall(cudaMemcpy(d_last_spike_time_of_each_neuron, last_spike_times, total_number_of_neurons*sizeof(float), cudaMemcpyHostToDevice));
-	CudaSafeCall(cudaMemcpy(d_membrane_potentials_v, after_spike_reset_membrane_potentials_c, sizeof(float)*total_number_of_neurons, cudaMemcpyHostToDevice));
 
 	if (high_fidelity_spike_flag){
 		CudaSafeCall(cudaMemcpy(d_bitarray_of_neuron_spikes, bitarray_of_neuron_spikes, sizeof(unsigned char)*bitarray_length*total_number_of_neurons, cudaMemcpyHostToDevice));
 	}
+
 }
 
 
@@ -152,6 +160,8 @@ __global__ void check_for_neuron_spikes_kernel(float *d_membrane_potentials_v,
 	int idx = threadIdx.x + blockIdx.x * blockDim.x;
 	while (idx < total_number_of_neurons) {
 		if (d_membrane_potentials_v[idx] >= d_thresholds_for_action_potential_spikes[idx]) {
+
+			// if (current_time_in_seconds ) printf(@current_time_in_seconds: %f d_membrane_potentials_v[%d]: %f d_thresholds_for_action_potential_spikes[idx]: %f\n", current_time_in_seconds, idx, d_membrane_potentials_v[idx], d_thresholds_for_action_potential_spikes[idx]);
 
 			// Set current time as last spike time of neuron
 			d_last_spike_time_of_each_neuron[idx] = current_time_in_seconds;

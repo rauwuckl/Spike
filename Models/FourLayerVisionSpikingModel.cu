@@ -345,8 +345,8 @@ void FourLayerVisionSpikingModel::finalise_model() {
 
 		if (E2I_L_SYNAPSES_ON && INHIBITORY_NEURONS_ON) {
 
-			E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->gaussian_synapses_per_postsynaptic_neuron = LBL_gaussian_synapses_sd_E2I_L[layer_index];
-			E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->gaussian_synapses_standard_deviation = LBL_fanInCount_E2I_L[layer_index];
+			E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->gaussian_synapses_per_postsynaptic_neuron = LBL_fanInCount_E2I_L[layer_index];
+			E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->gaussian_synapses_standard_deviation = LBL_gaussian_synapses_sd_E2I_L[layer_index];
 			E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->biological_conductance_scaling_constant_lambda = LBL_biological_conductance_scaling_constant_lambda_E2I_L[layer_index];
 			E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->decay_term_tau_g = LBL_decay_term_tau_g_E2I_L[layer_index];
 			E2I_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->max_number_of_connections_per_pair = LBL_max_number_of_connections_per_pair_E2I_L[layer_index];
@@ -357,8 +357,8 @@ void FourLayerVisionSpikingModel::finalise_model() {
 
 		if (I2E_L_SYNAPSES_ON && INHIBITORY_NEURONS_ON) {
 
+			I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->gaussian_synapses_per_postsynaptic_neuron = LBL_fanInCount_I2E_L[layer_index];
 			I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->gaussian_synapses_standard_deviation = LBL_gaussian_synapses_sd_I2E_L[layer_index];
-			I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->gaussian_synapses_standard_deviation = LBL_fanInCount_I2E_L[layer_index];
 			I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->biological_conductance_scaling_constant_lambda = LBL_biological_conductance_scaling_constant_lambda_I2E_L[layer_index];
 			I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->decay_term_tau_g = LBL_decay_term_tau_g_I2E_L[layer_index];
 			I2E_L_INHIBITORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->max_number_of_connections_per_pair = LBL_max_number_of_connections_per_pair_I2E_L[layer_index];
@@ -369,8 +369,8 @@ void FourLayerVisionSpikingModel::finalise_model() {
 		
 		if(E2E_L_SYNAPSES_ON) {
 
+			E2E_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->gaussian_synapses_per_postsynaptic_neuron = LBL_fanInCount_E2E_L[layer_index];
 			E2E_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->gaussian_synapses_standard_deviation = LBL_gaussian_synapses_sd_E2E_L[layer_index];
-			E2E_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->gaussian_synapses_standard_deviation = LBL_fanInCount_E2E_L[layer_index];
 			E2E_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->biological_conductance_scaling_constant_lambda = LBL_biological_conductance_scaling_constant_lambda_E2E_L[layer_index];
 			E2E_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->decay_term_tau_g = LBL_decay_term_tau_g_E2E_L[layer_index];
 			E2E_L_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->max_number_of_connections_per_pair = LBL_max_number_of_connections_per_pair_E2E_L[layer_index];
@@ -381,8 +381,8 @@ void FourLayerVisionSpikingModel::finalise_model() {
 
 		if (E2E_FB_SYNAPSES_ON) {
 
+			E2E_FB_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->gaussian_synapses_per_postsynaptic_neuron = LBL_fanInCount_E2E_FB[layer_index];
 			E2E_FB_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->gaussian_synapses_standard_deviation = LBL_gaussian_synapses_sd_E2E_FB[layer_index];
-			E2E_FB_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->gaussian_synapses_standard_deviation = LBL_fanInCount_E2E_FB[layer_index];
 			E2E_FB_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->biological_conductance_scaling_constant_lambda = LBL_biological_conductance_scaling_constant_lambda_E2E_FB[layer_index];
 			E2E_FB_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->decay_term_tau_g = LBL_decay_term_tau_g_E2E_FB[layer_index];
 			E2E_FB_EXCITATORY_CONDUCTANCE_SPIKING_SYNAPSE_PARAMETERS->max_number_of_connections_per_pair = LBL_max_number_of_connections_per_pair_E2E_FB[layer_index];
@@ -424,13 +424,17 @@ void FourLayerVisionSpikingModel::setup_full_standard_model_using_optimal_parame
 	I2E_L_SYNAPSES_ON = true;
 	E2E_L_SYNAPSES_ON = true;
 
-	LBL_biological_conductance_scaling_constant_lambda_E2E_FF[0] = 0.000292968762;
-	LBL_biological_conductance_scaling_constant_lambda_E2E_FF[1] = 0.000030517578;
-	LBL_biological_conductance_scaling_constant_lambda_E2E_FF[2] = 0.000036621095;
-	LBL_biological_conductance_scaling_constant_lambda_E2E_FF[3] = 0.000061035156;
-	set_LBL_values_for_pointer_from_layer_to_layer(0.010937500745, LBL_biological_conductance_scaling_constant_lambda_E2I_L, 0, 3);
-	set_LBL_values_for_pointer_from_layer_to_layer(0.050000000745, LBL_biological_conductance_scaling_constant_lambda_I2E_L, 0, 3);
-	set_LBL_values_for_pointer_from_layer_to_layer(0.000292968762, LBL_biological_conductance_scaling_constant_lambda_E2E_L, 0, 3);
+	LBL_biological_conductance_scaling_constant_lambda_E2E_FF[0] = 0.000701904297;
+
+	set_LBL_values_for_pointer_from_layer_to_layer(0.000015974045, LBL_biological_conductance_scaling_constant_lambda_E2E_L, 0, 3);
+	set_LBL_values_for_pointer_from_layer_to_layer(0.000286102295, LBL_biological_conductance_scaling_constant_lambda_E2I_L, 0, 3);
+	set_LBL_values_for_pointer_from_layer_to_layer(0.000011444092, LBL_biological_conductance_scaling_constant_lambda_I2E_L, 0, 3);
+	
+	LBL_biological_conductance_scaling_constant_lambda_E2E_FF[1] = 0.000000506640;
+	LBL_biological_conductance_scaling_constant_lambda_E2E_FF[2] = 0.000000774861;
+	LBL_biological_conductance_scaling_constant_lambda_E2E_FF[3] = 0.000001043082;	
+
+
 
 	// FINALISE MODEL + COPY TO DEVICE
 	finalise_model();
