@@ -22,10 +22,10 @@ public:
 						synapse_parameters_struct * synapse_params);
 
 
-	virtual void calculate_postsynaptic_current_injection(SpikingNeurons * neurons, float current_time_in_seconds, float timestep);
+	virtual void calculate_postsynaptic_current_injection_components(SpikingNeurons * neurons, float current_time_in_seconds, float timestep);
 };
 
-__global__ void current_calculate_postsynaptic_current_injection_kernel(float* d_synaptic_efficacies_or_weights,
+__global__ void current_calculate_postsynaptic_current_injection_components_kernel(float* d_synaptic_efficacies_or_weights,
 							float* d_time_of_last_spike_to_reach_synapse,
 							int* d_postsynaptic_neuron_indices,
 							float* d_neurons_current_injections,

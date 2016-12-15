@@ -161,7 +161,6 @@ void Simulator::RunSimulation(SpikeAnalyser *spike_analyser) {
 			// ((FourLayerVisionSpikingModel*)spiking_model)->image_poisson_input_spiking_neurons->setup_random_states_on_device();
 
 			int number_of_timesteps_per_stimulus_per_epoch = simulator_options->run_simulation_general_options->presentation_time_per_stimulus_per_epoch / spiking_model->timestep;
-			printf("number_of_timesteps_per_stimulus_per_epoch: %d\n", number_of_timesteps_per_stimulus_per_epoch);
 
 			for (int timestep_index = 0; timestep_index < number_of_timesteps_per_stimulus_per_epoch; timestep_index++){
 				
@@ -178,6 +177,8 @@ void Simulator::RunSimulation(SpikeAnalyser *spike_analyser) {
 			perform_post_stimulus_presentation_instructions(spike_analyser, epoch_number);
 			
 		}
+
+		printf("final_current_time_in_seconds: %f\n", current_time_in_seconds);
 
 		perform_post_epoch_instructions(epoch_number, epoch_timer);
 		

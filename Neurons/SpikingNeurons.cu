@@ -125,6 +125,19 @@ void SpikingNeurons::update_membrane_potentials(float timestep, float current_ti
 	
 }
 
+
+void SpikingNeurons::calcuate_total_current_injections(float* d_component_current_injections_for_each_synapse, int total_number_of_synapses) {
+
+	calcuate_total_current_injections_kernal<<<number_of_neuron_blocks_per_grid, threads_per_block>>>(total_number_of_neurons,
+														d_component_current_injections_for_each_synapse,
+														d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations,
+														total_number_of_synapses,
+														d_current_injections);
+
+	CudaCheckError();
+
+}
+
 void SpikingNeurons::check_for_neuron_spikes(float current_time_in_seconds, float timestep) {
 
 	check_for_neuron_spikes_kernel<<<number_of_neuron_blocks_per_grid, threads_per_block>>>(d_membrane_potentials_v,
@@ -141,6 +154,37 @@ void SpikingNeurons::check_for_neuron_spikes(float current_time_in_seconds, floa
 
 	CudaCheckError();
 }
+
+
+__global__ void calcuate_total_current_injections_kernal(size_t total_number_of_neurons,
+														float* d_component_current_injections_for_each_synapse,
+														int* d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations,
+														int total_number_of_synapses,
+														float* d_current_injections) {
+
+	// Get thread IDs
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+	while (idx < total_number_of_neurons) {
+
+		int last_index_for_sorted_array_of_synapses = (idx < total_number_of_neurons - 1) ? d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations[idx + 1] : total_number_of_synapses;
+
+		// printf("d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations[%d]: %d\n", idx, d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations[idx]);
+
+		float total_current_injection = 0.0;
+		for (int index_for_sorted_array_of_synapses = d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations[idx]; index_for_sorted_array_of_synapses < last_index_for_sorted_array_of_synapses; index_for_sorted_array_of_synapses++) {
+
+			total_current_injection += d_component_current_injections_for_each_synapse[index_for_sorted_array_of_synapses];
+
+		}
+
+		d_current_injections[idx] = total_current_injection;
+
+		idx += blockDim.x * gridDim.x;
+	}
+	__syncthreads();
+}
+
+
 
 
 // Spiking Neurons
@@ -161,7 +205,7 @@ __global__ void check_for_neuron_spikes_kernel(float *d_membrane_potentials_v,
 	while (idx < total_number_of_neurons) {
 		if (d_membrane_potentials_v[idx] >= d_thresholds_for_action_potential_spikes[idx]) {
 
-			// if (current_time_in_seconds ) printf(@current_time_in_seconds: %f d_membrane_potentials_v[%d]: %f d_thresholds_for_action_potential_spikes[idx]: %f\n", current_time_in_seconds, idx, d_membrane_potentials_v[idx], d_thresholds_for_action_potential_spikes[idx]);
+			// if (idx == 2329) printf("current_time_in_seconds: %f d_membrane_potentials_v[%d]: %.12f d_thresholds_for_action_potential_spikes[idx]: %.12f\n", current_time_in_seconds, idx, d_membrane_potentials_v[idx], d_thresholds_for_action_potential_spikes[idx]);
 
 			// Set current time as last spike time of neuron
 			d_last_spike_time_of_each_neuron[idx] = current_time_in_seconds;

@@ -45,10 +45,18 @@ public:
 	virtual void copy_constants_to_device();
 	virtual void reset_neuron_activities();
 	virtual void update_membrane_potentials(float timestep, float current_time_in_seconds);
+	virtual void calcuate_total_current_injections(float* d_component_current_injections_for_each_synapse, int total_number_of_synapses);
 	virtual void check_for_neuron_spikes(float current_time_in_seconds, float timestep);
 	void reset_time_related_neuron_activities();
 
 };
+
+
+__global__ void calcuate_total_current_injections_kernal(size_t total_number_of_neurons,
+														float* d_component_current_injections_for_each_synapse,
+														int* d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations,
+														int total_number_of_synapses,
+														float* d_current_injections);
 
 
 __global__ void check_for_neuron_spikes_kernel(float *d_membrane_potentials_v,

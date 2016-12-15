@@ -51,10 +51,12 @@ public:/**
 	int *last_neuron_indices_for_each_group;	/**< Indices of the final neuron in each group. */
 	int * per_neuron_afferent_synapse_count;	/**< A (host-side) count of the number of afferent synapses for each neuron */
 	int **group_shapes;							/**< The 2D shape of each group. */
+	int * postsynaptic_neuron_start_indices_for_sorted_conductance_calculations;
 
 	// Device Pointers
 	int * d_per_neuron_afferent_synapse_count;	/**< A (device-side) count of the number of afferent synapses for each neuron */
 	float* d_current_injections;				/**< Device array for the storage of current to be injected into each neuron on each timestep. */
+	int * d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations;
 
 	// CUDA Specific
 	dim3 number_of_neuron_blocks_per_grid;		/**< CUDA Device number of blocks */
@@ -96,6 +98,13 @@ public:/**
      *  A local, non-polymorphic function called in to determine the CUDA Device thread (Neurons::threads_per_block) and block dimensions (Neurons::number_of_neuron_blocks_per_grid).
 	*/
 	void set_threads_per_block_and_blocks_per_grid(int threads);
+
+	void set_up_current_injection_interface();
+
+
+private:
+	bool current_injection_interface_set_up;
+
 };
 
 #endif

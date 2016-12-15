@@ -61,7 +61,7 @@ public:
 
 	// Variables
 	int total_number_of_synapses;
-	int temp_number_of_synapses_in_last_group;
+	int original_number_of_synapses;
 	int largest_synapse_group_size;
 	bool print_synapse_group_details;
 	
@@ -72,6 +72,9 @@ public:
 	int* synapse_postsynaptic_neuron_count_index;
 	float* synaptic_efficacies_or_weights;
 
+	int* sorted_synapse_indices_for_sorted_conductance_calculations;
+	float* component_current_injections_for_each_synapse;
+
 	// Device pointers
 	int* d_presynaptic_neuron_indices;
 	int* d_postsynaptic_neuron_indices;
@@ -80,6 +83,9 @@ public:
 	int * d_synapse_postsynaptic_neuron_count_index;
 	float* d_synaptic_efficacies_or_weights;
 	float* d_temp_synaptic_efficacies_or_weights;
+
+	int* d_sorted_synapse_indices_for_sorted_conductance_calculations;
+	float* d_component_current_injections_for_each_synapse;
 
 	// CUDA Specific
 	dim3 number_of_synapse_blocks_per_grid;
@@ -96,10 +102,12 @@ public:
 	virtual void allocate_device_pointers();
 	virtual void copy_constants_and_initial_efficacies_to_device();
 
-
+	virtual void reset_synapse_activities();
 	virtual void set_threads_per_block_and_blocks_per_grid(int threads);
 	virtual void increment_number_of_synapses(int increment);
 	virtual void shuffle_synapses();
+
+	void set_up_current_injection_interface(Neurons * neurons);
 
 protected:
 	RandomStateManager * random_state_manager;

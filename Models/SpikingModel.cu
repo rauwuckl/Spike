@@ -84,6 +84,9 @@ void SpikingModel::AddSynapseGroupsForNeuronGroupAndEachInputGroup(int postsynap
 
 void SpikingModel::finalise_model() {
 
+	spiking_neurons->set_up_current_injection_interface();
+	spiking_synapses->set_up_current_injection_interface(spiking_neurons);
+
 }
 
 
@@ -113,6 +116,8 @@ void SpikingModel::copy_model_to_device() {
 	spiking_neurons->allocate_device_pointers(spiking_synapses->maximum_axonal_delay_in_timesteps, high_fidelity_spike_storage);
 	input_spiking_neurons->allocate_device_pointers(spiking_synapses->maximum_axonal_delay_in_timesteps, high_fidelity_spike_storage);
 	stdp_rule->allocate_device_pointers();
+
+
 
 	spiking_synapses->copy_constants_and_initial_efficacies_to_device();
 	spiking_neurons->copy_constants_to_device();
@@ -157,35 +162,15 @@ void SpikingModel::perform_per_timestep_model_instructions(float current_time_in
 
 	spiking_synapses->interact_spikes_with_synapses(spiking_neurons, input_spiking_neurons, current_time_in_seconds, timestep);
 
-	spiking_neurons->reset_current_injections();
-	spiking_synapses->calculate_postsynaptic_current_injection(spiking_neurons, current_time_in_seconds, timestep);
+	// spiking_neurons->reset_current_injections();
+	spiking_synapses->calculate_postsynaptic_current_injection_components(spiking_neurons, current_time_in_seconds, timestep);
+// NEW: 
+	spiking_neurons->calcuate_total_current_injections(spiking_synapses->d_component_current_injections_for_each_synapse, spiking_synapses->total_number_of_synapses);
 
 	if (apply_stdp_to_relevant_synapses){
 		stdp_rule->Run_STDP(spiking_neurons->d_last_spike_time_of_each_neuron, current_time_in_seconds, timestep);
 	}
 
+	// print_message_and_exit("break");
+
 }
-
-
-// PREVIOUS PER TIMESTEP MODEL INSTRUCTIONS. KEEP FOR NOW FOR COMPARISON, ALTHOUGH NEW ORDERING SHOULD WORK + MORE LOGICAL
-
-// void SpikingModel::perform_per_timestep_model_instructions(float current_time_in_seconds, bool apply_stdp_to_relevant_synapses){
-
-// 	spiking_neurons->reset_current_injections();
-
-// 	spiking_neurons->check_for_neuron_spikes(current_time_in_seconds, timestep);
-// 	input_spiking_neurons->check_for_neuron_spikes(current_time_in_seconds, timestep);
-
-// 	spiking_synapses->interact_spikes_with_synapses(spiking_neurons, input_spiking_neurons, current_time_in_seconds, timestep);
-
-// 	spiking_synapses->calculate_postsynaptic_current_injection(spiking_neurons, current_time_in_seconds, timestep);
-
-// 	if (apply_stdp_to_relevant_synapses){
-// 		stdp_rule->Run_STDP(spiking_neurons->d_last_spike_time_of_each_neuron, current_time_in_seconds, timestep);
-// 	}
-
-// 	spiking_neurons->update_membrane_potentials(timestep, current_time_in_seconds);
-// 	input_spiking_neurons->update_membrane_potentials(timestep, current_time_in_seconds);
-
-// }
-

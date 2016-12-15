@@ -58,7 +58,7 @@ void SpikingSynapses::AddGroup(int presynaptic_group_id,
 
 	spiking_synapse_parameters_struct * spiking_synapse_group_params = (spiking_synapse_parameters_struct*)synapse_params;
 
-	for (int i = (total_number_of_synapses - temp_number_of_synapses_in_last_group); i < total_number_of_synapses; i++){
+	for (int i = original_number_of_synapses; i < total_number_of_synapses; i++){
 		
 		// Convert delay range from time to number of timesteps
 		int delay_range_in_timesteps[2] = {int(round(spiking_synapse_group_params->delay_range[0]/timestep)), int(round(spiking_synapse_group_params->delay_range[1]/timestep))};
@@ -125,6 +125,8 @@ void SpikingSynapses::copy_constants_and_initial_efficacies_to_device() {
 
 
 void SpikingSynapses::reset_synapse_activities() {
+
+	Synapses::reset_synapse_activities();
 	
 	reset_time_related_synapse_activities();
 
@@ -200,7 +202,7 @@ void SpikingSynapses::interact_spikes_with_synapses(SpikingNeurons * neurons, Sp
 
 
 
-void SpikingSynapses::calculate_postsynaptic_current_injection(SpikingNeurons * neurons, float current_time_in_seconds, float timestep) {
+void SpikingSynapses::calculate_postsynaptic_current_injection_components(SpikingNeurons * neurons, float current_time_in_seconds, float timestep) {
 
 }
 

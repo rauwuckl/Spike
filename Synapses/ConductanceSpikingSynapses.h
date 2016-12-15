@@ -48,17 +48,30 @@ public:
 	virtual void increment_number_of_synapses(int increment);
 	virtual void shuffle_synapses();
 
-	virtual void calculate_postsynaptic_current_injection(SpikingNeurons * neurons, float current_time_in_seconds, float timestep);
+	virtual void calculate_postsynaptic_current_injection_components(SpikingNeurons * neurons, float current_time_in_seconds, float timestep);
 	virtual void update_synaptic_conductances(float timestep, float current_time_in_seconds);
 };
 
-__global__ void conductance_calculate_postsynaptic_current_injection_kernel(int * d_presynaptic_neuron_indices,
+// __global__ void conductance_calculate_postsynaptic_current_injection_kernel(int * d_presynaptic_neuron_indices,
+// 							int* d_postsynaptic_neuron_indices,
+// 							float* d_reversal_potentials_Vhat,
+// 							float* d_neurons_current_injections,
+// 							size_t total_number_of_synapses,
+// 							float * d_membrane_potentials_v,
+// 							float * d_synaptic_conductances_g,
+// 							float current_time_in_seconds);
+
+__global__ void conductance_calculate_postsynaptic_current_injection_components_kernel(int * d_presynaptic_neuron_indices,
 							int* d_postsynaptic_neuron_indices,
 							float* d_reversal_potentials_Vhat,
 							float* d_neurons_current_injections,
 							size_t total_number_of_synapses,
 							float * d_membrane_potentials_v,
-							float * d_synaptic_conductances_g);
+							float * d_synaptic_conductances_g,
+							int * d_sorted_synapse_indices_for_sorted_conductance_calculations,
+							float * d_component_current_injections_for_each_synapse);
+
+__global__ void conductance_calculate_total_postsynaptic_current_injections_from_components_kernel(float * d_component_current_injections_for_each_synapse);
 
 
 __global__ void conductance_update_synaptic_conductances_kernel(float timestep, 

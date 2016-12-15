@@ -52,7 +52,7 @@ public:
 	virtual void shuffle_synapses();
 
 	virtual void update_synaptic_conductances(float timestep, float current_time_in_seconds);
-	virtual void calculate_postsynaptic_current_injection(SpikingNeurons * neurons, float current_time_in_seconds, float timestep);
+	virtual void calculate_postsynaptic_current_injection_components(SpikingNeurons * neurons, float current_time_in_seconds, float timestep);
 
 	virtual void interact_spikes_with_synapses(SpikingNeurons * neurons, SpikingNeurons * input_neurons, float current_time_in_seconds, float timestep);
 

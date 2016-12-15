@@ -103,6 +103,11 @@ __global__ void lif_update_membrane_potentials(float *d_membrane_potentials_v,
 	while (idx < total_number_of_neurons) {
 
 		if ((current_time_in_seconds - d_last_spike_time_of_each_neuron[idx]) >= refractory_period_in_seconds){
+
+			// if (idx == 2329 && current_time_in_seconds > 2.26 && current_time_in_seconds < 2.27) {
+			// 	printf("%.24f\n", d_current_injections[idx]);
+			// }
+
 			float equation_constant = timestep / d_membrane_time_constants_tau_m[idx];
 			float membrane_potential_Vi = d_membrane_potentials_v[idx];
 			float current_injection_Ii = d_current_injections[idx];

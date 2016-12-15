@@ -20,7 +20,7 @@ Synapses::Synapses() {
 
 	// Variables
 	total_number_of_synapses = 0;
-	temp_number_of_synapses_in_last_group = 0;
+	original_number_of_synapses = 0;
 	largest_synapse_group_size = 0;
 	print_synapse_group_details = false;
 
@@ -30,6 +30,8 @@ Synapses::Synapses() {
 	original_synapse_indices = NULL;
 	synaptic_efficacies_or_weights = NULL;
 	synapse_postsynaptic_neuron_count_index = NULL;
+	component_current_injections_for_each_synapse = NULL;
+	sorted_synapse_indices_for_sorted_conductance_calculations = NULL;
 
 	// Device Pointers
 	d_presynaptic_neuron_indices = NULL;
@@ -39,6 +41,8 @@ Synapses::Synapses() {
 	d_synaptic_efficacies_or_weights = NULL;
 	d_temp_synaptic_efficacies_or_weights = NULL;
 	d_synapse_postsynaptic_neuron_count_index = NULL;
+	d_component_current_injections_for_each_synapse = NULL;
+	d_sorted_synapse_indices_for_sorted_conductance_calculations = NULL;
 
 	random_state_manager = new RandomStateManager();
 	random_state_manager->setup_random_states();
@@ -56,6 +60,8 @@ Synapses::~Synapses() {
 	free(synaptic_efficacies_or_weights);
 	free(original_synapse_indices);
 	free(synapse_postsynaptic_neuron_count_index);
+	free(component_current_injections_for_each_synapse);
+	free(sorted_synapse_indices_for_sorted_conductance_calculations);
 	
 	delete random_state_manager;
 
@@ -66,6 +72,8 @@ Synapses::~Synapses() {
 	CudaSafeCall(cudaFree(d_synaptic_efficacies_or_weights));
 	CudaSafeCall(cudaFree(d_temp_synaptic_efficacies_or_weights));
 	CudaSafeCall(cudaFree(d_synapse_postsynaptic_neuron_count_index));
+	CudaSafeCall(cudaFree(d_component_current_injections_for_each_synapse));
+	CudaSafeCall(cudaFree(d_sorted_synapse_indices_for_sorted_conductance_calculations));
 
 	// free(number_of_synapse_blocks_per_grid);
 
@@ -252,9 +260,12 @@ void Synapses::AddGroup(int presynaptic_group_id,
 		}
 	}
 
-	temp_number_of_synapses_in_last_group = total_number_of_synapses - original_number_of_synapses;
+	if (print_synapse_group_details == true) printf("%d new synapses added.\n\n", total_number_of_synapses - original_number_of_synapses);
 
-	if (print_synapse_group_details == true) printf("%d new synapses added.\n\n", temp_number_of_synapses_in_last_group);
+	// printf("original_number_of_synapses: %d\n", original_number_of_synapses);
+
+	int current_postsynaptic_neuron_index = -1;
+	int postsynaptic_group_count = 0;
 
 	for (int i = original_number_of_synapses; i < total_number_of_synapses; i++){
 		
@@ -276,9 +287,53 @@ void Synapses::AddGroup(int presynaptic_group_id,
 		synapse_postsynaptic_neuron_count_index[postsynaptic_neuron_indices[i]] = neurons->per_neuron_afferent_synapse_count[postsynaptic_neuron_indices[i]];
 		neurons->per_neuron_afferent_synapse_count[postsynaptic_neuron_indices[i]] ++;
 
+		int new_postsynaptic_neuron_index = postsynaptic_neuron_indices[i];
+
+		if (new_postsynaptic_neuron_index != current_postsynaptic_neuron_index) {
+			postsynaptic_group_count++;
+		}
+
+		current_postsynaptic_neuron_index = new_postsynaptic_neuron_index;
+
+
 	}
 
 }
+
+
+void Synapses::set_up_current_injection_interface(Neurons * neurons) {
+
+	sorted_synapse_indices_for_sorted_conductance_calculations = (int*)malloc(total_number_of_synapses * sizeof(int));
+	component_current_injections_for_each_synapse = (float*)malloc(total_number_of_synapses * sizeof(float));
+	int * temp_afferent_synapse_count_for_each_neuron = (int*)malloc(neurons->total_number_of_neurons * sizeof(int));
+
+	for (int neuron_index = 0; neuron_index < neurons->total_number_of_neurons; neuron_index++) {
+		temp_afferent_synapse_count_for_each_neuron[neuron_index] = 0;
+	}
+
+	for (int synapse_index = 0; synapse_index < total_number_of_synapses; synapse_index++) {
+
+		int postsynaptic_neuron_index = postsynaptic_neuron_indices[synapse_index];
+
+		sorted_synapse_indices_for_sorted_conductance_calculations[synapse_index] = neurons->postsynaptic_neuron_start_indices_for_sorted_conductance_calculations[postsynaptic_neuron_index] + temp_afferent_synapse_count_for_each_neuron[postsynaptic_neuron_index];
+	
+		component_current_injections_for_each_synapse[synapse_index] = 0.0f;
+
+		temp_afferent_synapse_count_for_each_neuron[postsynaptic_neuron_index] ++;
+
+	}
+
+
+
+
+	// for (int neuron_index = 0; neuron_index < neurons->total_number_of_neurons; neuron_index++) {
+	// 	printf("neurons->per_neuron_afferent_synapse_count[neuron_index]: %d\n", neurons->per_neuron_afferent_synapse_count[neuron_index]);
+	// }
+
+}
+
+
+
 
 void Synapses::increment_number_of_synapses(int increment) {
 
@@ -318,6 +373,9 @@ void Synapses::allocate_device_pointers() {
 	CudaSafeCall(cudaMalloc((void **)&d_synaptic_efficacies_or_weights, sizeof(float)*total_number_of_synapses));
 	CudaSafeCall(cudaMalloc((void **)&d_synapse_postsynaptic_neuron_count_index, sizeof(float)*total_number_of_synapses));
 
+	CudaSafeCall(cudaMalloc((void **)&d_sorted_synapse_indices_for_sorted_conductance_calculations, sizeof(int)*total_number_of_synapses));
+	CudaSafeCall(cudaMalloc((void **)&d_component_current_injections_for_each_synapse, sizeof(float)*total_number_of_synapses));
+
 }
 
 
@@ -330,9 +388,17 @@ void Synapses::copy_constants_and_initial_efficacies_to_device() {
 	CudaSafeCall(cudaMemcpy(d_synaptic_efficacies_or_weights, synaptic_efficacies_or_weights, sizeof(float)*total_number_of_synapses, cudaMemcpyHostToDevice));
 	CudaSafeCall(cudaMemcpy(d_synapse_postsynaptic_neuron_count_index, synapse_postsynaptic_neuron_count_index, sizeof(float)*total_number_of_synapses, cudaMemcpyHostToDevice));
 
+	CudaSafeCall(cudaMemcpy(d_sorted_synapse_indices_for_sorted_conductance_calculations, sorted_synapse_indices_for_sorted_conductance_calculations, sizeof(int)*total_number_of_synapses, cudaMemcpyHostToDevice));
+	CudaSafeCall(cudaMemcpy(d_component_current_injections_for_each_synapse, component_current_injections_for_each_synapse, sizeof(float) * total_number_of_synapses, cudaMemcpyHostToDevice));
+
 }
 
 
+void Synapses::reset_synapse_activities(){
+
+	CudaSafeCall(cudaMemcpy(d_component_current_injections_for_each_synapse, component_current_injections_for_each_synapse, sizeof(float) * total_number_of_synapses, cudaMemcpyHostToDevice));
+
+}
 
 
 // Provides order of magnitude speedup for LIF (All to all atleast). 
