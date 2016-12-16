@@ -164,8 +164,10 @@ void SpikingModel::perform_per_timestep_model_instructions(float current_time_in
 
 	// spiking_neurons->reset_current_injections();
 	spiking_synapses->calculate_postsynaptic_current_injection_components(spiking_neurons, current_time_in_seconds, timestep);
-// NEW: 
+
+// NEW: 	
 	spiking_neurons->calcuate_total_current_injections(spiking_synapses->d_component_current_injections_for_each_synapse, spiking_synapses->total_number_of_synapses);
+	// spiking_synapses->test_calcuate_total_current_injections_synapses_version_kernal(spiking_neurons);
 
 	if (apply_stdp_to_relevant_synapses){
 		stdp_rule->Run_STDP(spiking_neurons->d_last_spike_time_of_each_neuron, current_time_in_seconds, timestep);

@@ -64,6 +64,7 @@ public:
 	int original_number_of_synapses;
 	int largest_synapse_group_size;
 	bool print_synapse_group_details;
+	int total_additions_overall;
 	
 	// Host Pointers
 	int* presynaptic_neuron_indices;
@@ -72,8 +73,15 @@ public:
 	int* synapse_postsynaptic_neuron_count_index;
 	float* synaptic_efficacies_or_weights;
 
-	int* sorted_synapse_indices_for_sorted_conductance_calculations;
+	int* indices_of_original_synapses_in_sorted_array;
+	int* indices_of_sorted_synapses_in_orginal_arrays;
 	float* component_current_injections_for_each_synapse;
+
+	int* array_of_sorted_synapse_indices_for_lhs_of_addition = NULL;
+	int* array_of_sorted_synapse_indices_for_rhs_of_addition = NULL;
+	int* array_of_stage_start_indices = NULL;
+	int* array_of_number_of_additions_per_stage = NULL;
+	int number_of_addition_stages = 0;
 
 	// Device pointers
 	int* d_presynaptic_neuron_indices;
@@ -84,8 +92,14 @@ public:
 	float* d_synaptic_efficacies_or_weights;
 	float* d_temp_synaptic_efficacies_or_weights;
 
-	int* d_sorted_synapse_indices_for_sorted_conductance_calculations;
+	int* d_indices_of_original_synapses_in_sorted_array;
+	int* d_indices_of_sorted_synapses_in_orginal_arrays;
 	float* d_component_current_injections_for_each_synapse;
+
+	int* d_array_of_sorted_synapse_indices_for_lhs_of_addition = NULL;
+	int* d_array_of_sorted_synapse_indices_for_rhs_of_addition = NULL;
+	int* d_array_of_stage_start_indices = NULL;
+	int* d_array_of_number_of_additions_per_stage = NULL;
 
 	// CUDA Specific
 	dim3 number_of_synapse_blocks_per_grid;

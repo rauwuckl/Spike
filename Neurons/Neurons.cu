@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "../Helpers/CUDAErrorCheckHelpers.h"
 #include "../Helpers/TerminalHelpers.h"
+#include "../Helpers/MemoryUsage.h"
 
 
 // Neurons Constructor

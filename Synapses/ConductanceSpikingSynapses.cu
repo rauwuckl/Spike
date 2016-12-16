@@ -165,7 +165,7 @@ void ConductanceSpikingSynapses::calculate_postsynaptic_current_injection_compon
 																	total_number_of_synapses,
 																	neurons->d_membrane_potentials_v, 
 																	d_synaptic_conductances_g,
-																	d_sorted_synapse_indices_for_sorted_conductance_calculations,
+																	d_indices_of_original_synapses_in_sorted_array,
 																	d_component_current_injections_for_each_synapse);
 
 	CudaCheckError();
@@ -188,46 +188,6 @@ void ConductanceSpikingSynapses::update_synaptic_conductances(float timestep, fl
 }
 
 
-// __global__ void conductance_calculate_postsynaptic_current_injection_kernel(int * d_presynaptic_neuron_indices,
-// 							int* d_postsynaptic_neuron_indices,
-// 							float* d_reversal_potentials_Vhat,
-// 							float* d_neurons_current_injections,
-// 							size_t total_number_of_synapses,
-// 							float * d_membrane_potentials_v,
-// 							float * d_synaptic_conductances_g,
-// 							float current_time_in_seconds){
-
-// 	int idx = threadIdx.x + blockIdx.x * blockDim.x;
-// 	while (idx < total_number_of_synapses) {
-
-// 		float reversal_potential_Vhat = d_reversal_potentials_Vhat[idx];
-// 		int postsynaptic_neuron_index = d_postsynaptic_neuron_indices[idx];
-// 		float membrane_potential_v = d_membrane_potentials_v[postsynaptic_neuron_index];
-// 		float synaptic_conductance_g = d_synaptic_conductances_g[idx];
-
-// 		float component_for_sum = synaptic_conductance_g * (reversal_potential_Vhat - membrane_potential_v);
-// 		// if ((component_for_sum > 0.0000000001) || (component_for_sum < -0.0000000001)) {
-// 		// if ((component_for_sum > 0.00000000001) || (component_for_sum < -0.00000000001)) {
-// 		if (component_for_sum != 0.0) {
-
-// 			// if (postsynaptic_neuron_index == 2329) printf("component_for_sum: %.16f\n", component_for_sum);
-// 			// printf("yo\n");
-
-
-// 		// if (component_for_sum != 0.0) {
-// 			// if (postsynaptic_neuron_index == 2329 && current_time_in_seconds > 2.26 && current_time_in_seconds < 2.27) {
-// 			// 	printf("%.12f\n", component_for_sum);
-// 			// }
-// 			atomicAdd(&d_neurons_current_injections[postsynaptic_neuron_index], component_for_sum);
-// 		}
-
-// 		idx += blockDim.x * gridDim.x;
-
-// 	}
-// 	__syncthreads();
-// }
-
-
 __global__ void conductance_calculate_postsynaptic_current_injection_components_kernel(int * d_presynaptic_neuron_indices,
 							int* d_postsynaptic_neuron_indices,
 							float* d_reversal_potentials_Vhat,
@@ -235,7 +195,7 @@ __global__ void conductance_calculate_postsynaptic_current_injection_components_
 							size_t total_number_of_synapses,
 							float * d_membrane_potentials_v,
 							float * d_synaptic_conductances_g,
-							int * d_sorted_synapse_indices_for_sorted_conductance_calculations,
+							int * d_indices_of_original_synapses_in_sorted_array,
 							float * d_component_current_injections_for_each_synapse){
 
 	int idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -250,7 +210,7 @@ __global__ void conductance_calculate_postsynaptic_current_injection_components_
 
 		if (component_for_sum != 0.0) {
 
-			d_component_current_injections_for_each_synapse[d_sorted_synapse_indices_for_sorted_conductance_calculations[idx]] = component_for_sum;
+			d_component_current_injections_for_each_synapse[d_indices_of_original_synapses_in_sorted_array[idx]] = component_for_sum;
 
 			// atomicAdd(&d_neurons_current_injections[postsynaptic_neuron_index], component_for_sum);
 		}
@@ -260,7 +220,6 @@ __global__ void conductance_calculate_postsynaptic_current_injection_components_
 	}
 	__syncthreads();
 }
-
 
 
 __global__ void conductance_update_synaptic_conductances_kernel(float timestep, 

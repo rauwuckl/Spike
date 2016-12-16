@@ -7,6 +7,7 @@
 #include "Synapses.h"
 #include "../Helpers/CUDAErrorCheckHelpers.h"
 #include "../Helpers/TerminalHelpers.h"
+#include "../Helpers/MemoryUsage.h"
 
 #include <algorithm> // for random shuffle
 
@@ -23,6 +24,7 @@ Synapses::Synapses() {
 	original_number_of_synapses = 0;
 	largest_synapse_group_size = 0;
 	print_synapse_group_details = false;
+	total_additions_overall = 0;
 
 	// Host Pointers
 	presynaptic_neuron_indices = NULL;
@@ -31,7 +33,12 @@ Synapses::Synapses() {
 	synaptic_efficacies_or_weights = NULL;
 	synapse_postsynaptic_neuron_count_index = NULL;
 	component_current_injections_for_each_synapse = NULL;
-	sorted_synapse_indices_for_sorted_conductance_calculations = NULL;
+	indices_of_original_synapses_in_sorted_array = NULL;
+	indices_of_sorted_synapses_in_orginal_arrays = NULL;
+	array_of_sorted_synapse_indices_for_lhs_of_addition = NULL;
+	array_of_sorted_synapse_indices_for_rhs_of_addition = NULL;
+	array_of_stage_start_indices = NULL;
+	array_of_number_of_additions_per_stage = NULL;
 
 	// Device Pointers
 	d_presynaptic_neuron_indices = NULL;
@@ -42,7 +49,12 @@ Synapses::Synapses() {
 	d_temp_synaptic_efficacies_or_weights = NULL;
 	d_synapse_postsynaptic_neuron_count_index = NULL;
 	d_component_current_injections_for_each_synapse = NULL;
-	d_sorted_synapse_indices_for_sorted_conductance_calculations = NULL;
+	d_indices_of_original_synapses_in_sorted_array = NULL;
+	d_indices_of_sorted_synapses_in_orginal_arrays = NULL;
+	d_array_of_sorted_synapse_indices_for_lhs_of_addition = NULL;
+	d_array_of_sorted_synapse_indices_for_rhs_of_addition = NULL;
+	d_array_of_stage_start_indices = NULL;
+	d_array_of_number_of_additions_per_stage = NULL;
 
 	random_state_manager = new RandomStateManager();
 	random_state_manager->setup_random_states();
@@ -61,7 +73,12 @@ Synapses::~Synapses() {
 	free(original_synapse_indices);
 	free(synapse_postsynaptic_neuron_count_index);
 	free(component_current_injections_for_each_synapse);
-	free(sorted_synapse_indices_for_sorted_conductance_calculations);
+	free(indices_of_original_synapses_in_sorted_array);
+	free(indices_of_sorted_synapses_in_orginal_arrays);
+	free(array_of_sorted_synapse_indices_for_lhs_of_addition);
+	free(array_of_sorted_synapse_indices_for_rhs_of_addition);
+	free(array_of_stage_start_indices);
+	free(array_of_number_of_additions_per_stage);
 	
 	delete random_state_manager;
 
@@ -73,7 +90,12 @@ Synapses::~Synapses() {
 	CudaSafeCall(cudaFree(d_temp_synaptic_efficacies_or_weights));
 	CudaSafeCall(cudaFree(d_synapse_postsynaptic_neuron_count_index));
 	CudaSafeCall(cudaFree(d_component_current_injections_for_each_synapse));
-	CudaSafeCall(cudaFree(d_sorted_synapse_indices_for_sorted_conductance_calculations));
+	CudaSafeCall(cudaFree(d_indices_of_original_synapses_in_sorted_array));
+	CudaSafeCall(cudaFree(d_indices_of_sorted_synapses_in_orginal_arrays));
+	CudaSafeCall(cudaFree(d_array_of_sorted_synapse_indices_for_lhs_of_addition));
+	CudaSafeCall(cudaFree(d_array_of_sorted_synapse_indices_for_rhs_of_addition));
+	CudaSafeCall(cudaFree(d_array_of_stage_start_indices));
+	CudaSafeCall(cudaFree(d_array_of_number_of_additions_per_stage));
 
 	// free(number_of_synapse_blocks_per_grid);
 
@@ -303,7 +325,10 @@ void Synapses::AddGroup(int presynaptic_group_id,
 
 void Synapses::set_up_current_injection_interface(Neurons * neurons) {
 
-	sorted_synapse_indices_for_sorted_conductance_calculations = (int*)malloc(total_number_of_synapses * sizeof(int));
+	print_memory_usage();
+
+	indices_of_original_synapses_in_sorted_array = (int*)malloc(total_number_of_synapses * sizeof(int));
+	indices_of_sorted_synapses_in_orginal_arrays = (int*)malloc(total_number_of_synapses * sizeof(int));
 	component_current_injections_for_each_synapse = (float*)malloc(total_number_of_synapses * sizeof(float));
 	int * temp_afferent_synapse_count_for_each_neuron = (int*)malloc(neurons->total_number_of_neurons * sizeof(int));
 
@@ -315,8 +340,10 @@ void Synapses::set_up_current_injection_interface(Neurons * neurons) {
 
 		int postsynaptic_neuron_index = postsynaptic_neuron_indices[synapse_index];
 
-		sorted_synapse_indices_for_sorted_conductance_calculations[synapse_index] = neurons->postsynaptic_neuron_start_indices_for_sorted_conductance_calculations[postsynaptic_neuron_index] + temp_afferent_synapse_count_for_each_neuron[postsynaptic_neuron_index];
-	
+		int index_of_original_synapse_in_sorted_array = neurons->postsynaptic_neuron_start_indices_for_sorted_conductance_calculations[postsynaptic_neuron_index] + temp_afferent_synapse_count_for_each_neuron[postsynaptic_neuron_index];
+		indices_of_original_synapses_in_sorted_array[synapse_index] = index_of_original_synapse_in_sorted_array;
+		indices_of_sorted_synapses_in_orginal_arrays[index_of_original_synapse_in_sorted_array] = synapse_index;
+
 		component_current_injections_for_each_synapse[synapse_index] = 0.0f;
 
 		temp_afferent_synapse_count_for_each_neuron[postsynaptic_neuron_index] ++;
@@ -324,11 +351,94 @@ void Synapses::set_up_current_injection_interface(Neurons * neurons) {
 	}
 
 
+	// int 
+	// for (int neuron_index = 0; neuron_index < total_number_of_neurons; neuron_index++) {
 
+	// 	temp_afferent_synapse_count_for_each_neuron[
 
-	// for (int neuron_index = 0; neuron_index < neurons->total_number_of_neurons; neuron_index++) {
-	// 	printf("neurons->per_neuron_afferent_synapse_count[neuron_index]: %d\n", neurons->per_neuron_afferent_synapse_count[neuron_index]);
 	// }
+
+
+	
+	number_of_addition_stages = 0;
+
+	for (int step_index = 0; step_index < 2; step_index++) {
+
+		bool was_new_addition = true;
+		int stage_count = 0;
+		int total_new_additions_overall = 0;
+		while (was_new_addition) {
+
+			was_new_addition = false;
+
+			if (step_index == 1) {
+				array_of_stage_start_indices[stage_count] = total_new_additions_overall;
+			}
+
+			int total_new_additions_for_stage = 0;
+
+			int stage_diff = pow(2, stage_count);
+			int stage_buff = pow(2, stage_count+1);
+
+			for (int sorted_synapse_index = 0; sorted_synapse_index < total_number_of_synapses; sorted_synapse_index++) {
+
+				int original_synapse_index = indices_of_original_synapses_in_sorted_array[sorted_synapse_index];
+				int postsynaptic_neuron_index = postsynaptic_neuron_indices[original_synapse_index];
+				int start_index_for_postsyn_neurons_aff_syns_in_sorted_array = neurons->postsynaptic_neuron_start_indices_for_sorted_conductance_calculations[postsynaptic_neuron_index];
+				int original_synapse_index_zeroed_for_postsyn = sorted_synapse_index - start_index_for_postsyn_neurons_aff_syns_in_sorted_array;
+
+				if (original_synapse_index_zeroed_for_postsyn % stage_buff == 0) {
+
+					int total_afferent_synapses_for_postsynaptic_neuron = neurons->per_neuron_afferent_synapse_count[postsynaptic_neuron_index];
+
+					int end_index_for_postsyn_neurons_aff_syns_in_sorted_array = start_index_for_postsyn_neurons_aff_syns_in_sorted_array + total_afferent_synapses_for_postsynaptic_neuron - 1;
+
+					int sorted_synapse_index_2 = sorted_synapse_index + stage_diff;
+
+					if (sorted_synapse_index_2 < end_index_for_postsyn_neurons_aff_syns_in_sorted_array) {
+
+						if (step_index == 1) {
+							array_of_sorted_synapse_indices_for_lhs_of_addition[total_new_additions_overall] = sorted_synapse_index;
+							array_of_sorted_synapse_indices_for_rhs_of_addition[total_new_additions_overall] = sorted_synapse_index_2;
+						}
+
+						total_new_additions_for_stage++;
+						total_new_additions_overall++;
+						was_new_addition = true;
+
+					}
+
+				}
+			
+			}
+
+			// printf("total_new_additions_for_stage: %d\n", total_new_additions_for_stage);
+
+			if (step_index == 1) {
+				array_of_number_of_additions_per_stage[stage_count] = total_new_additions_for_stage;
+			}
+
+			stage_count++;
+
+			number_of_addition_stages = stage_count;
+
+			if (!was_new_addition) break;
+
+		}
+
+		if (step_index == 0) {
+			array_of_sorted_synapse_indices_for_lhs_of_addition = (int*)malloc(total_new_additions_overall * sizeof(int));
+			array_of_sorted_synapse_indices_for_rhs_of_addition = (int*)malloc(total_new_additions_overall * sizeof(int));
+			array_of_stage_start_indices = (int*)malloc(stage_count * sizeof(int));
+			array_of_number_of_additions_per_stage = (int*)malloc(stage_count * sizeof(int));
+		}
+
+		total_additions_overall = total_new_additions_overall;
+
+	}
+
+	// print_memory_usage();
+
 
 }
 
@@ -371,10 +481,17 @@ void Synapses::allocate_device_pointers() {
 	CudaSafeCall(cudaMalloc((void **)&d_presynaptic_neuron_indices, sizeof(int)*total_number_of_synapses));
 	CudaSafeCall(cudaMalloc((void **)&d_postsynaptic_neuron_indices, sizeof(int)*total_number_of_synapses));
 	CudaSafeCall(cudaMalloc((void **)&d_synaptic_efficacies_or_weights, sizeof(float)*total_number_of_synapses));
-	CudaSafeCall(cudaMalloc((void **)&d_synapse_postsynaptic_neuron_count_index, sizeof(float)*total_number_of_synapses));
+	// CudaSafeCall(cudaMalloc((void **)&d_synapse_postsynaptic_neuron_count_index, sizeof(float)*total_number_of_synapses));
 
-	CudaSafeCall(cudaMalloc((void **)&d_sorted_synapse_indices_for_sorted_conductance_calculations, sizeof(int)*total_number_of_synapses));
+	CudaSafeCall(cudaMalloc((void **)&d_indices_of_original_synapses_in_sorted_array, sizeof(int)*total_number_of_synapses));
+	// CudaSafeCall(cudaMalloc((void **)&d_indices_of_sorted_synapses_in_orginal_arrays, sizeof(int)*total_number_of_synapses));
 	CudaSafeCall(cudaMalloc((void **)&d_component_current_injections_for_each_synapse, sizeof(float)*total_number_of_synapses));
+	CudaSafeCall(cudaMalloc((void **)&d_array_of_sorted_synapse_indices_for_lhs_of_addition, sizeof(int)*total_additions_overall));
+	CudaSafeCall(cudaMalloc((void **)&d_array_of_sorted_synapse_indices_for_rhs_of_addition, sizeof(int)*total_additions_overall));
+	// printf("number_of_addition_stages: %d\n", number_of_addition_stages);
+	CudaSafeCall(cudaMalloc((void **)&d_array_of_stage_start_indices, sizeof(int)*number_of_addition_stages));
+	CudaSafeCall(cudaMalloc((void **)&d_array_of_number_of_additions_per_stage, sizeof(int)*number_of_addition_stages));
+
 
 }
 
@@ -386,10 +503,15 @@ void Synapses::copy_constants_and_initial_efficacies_to_device() {
 	CudaSafeCall(cudaMemcpy(d_presynaptic_neuron_indices, presynaptic_neuron_indices, sizeof(int)*total_number_of_synapses, cudaMemcpyHostToDevice));
 	CudaSafeCall(cudaMemcpy(d_postsynaptic_neuron_indices, postsynaptic_neuron_indices, sizeof(int)*total_number_of_synapses, cudaMemcpyHostToDevice));
 	CudaSafeCall(cudaMemcpy(d_synaptic_efficacies_or_weights, synaptic_efficacies_or_weights, sizeof(float)*total_number_of_synapses, cudaMemcpyHostToDevice));
-	CudaSafeCall(cudaMemcpy(d_synapse_postsynaptic_neuron_count_index, synapse_postsynaptic_neuron_count_index, sizeof(float)*total_number_of_synapses, cudaMemcpyHostToDevice));
+	// CudaSafeCall(cudaMemcpy(d_synapse_postsynaptic_neuron_count_index, synapse_postsynaptic_neuron_count_index, sizeof(float)*total_number_of_synapses, cudaMemcpyHostToDevice));
 
-	CudaSafeCall(cudaMemcpy(d_sorted_synapse_indices_for_sorted_conductance_calculations, sorted_synapse_indices_for_sorted_conductance_calculations, sizeof(int)*total_number_of_synapses, cudaMemcpyHostToDevice));
+	CudaSafeCall(cudaMemcpy(d_indices_of_original_synapses_in_sorted_array, indices_of_original_synapses_in_sorted_array, sizeof(int)*total_number_of_synapses, cudaMemcpyHostToDevice));
+	// CudaSafeCall(cudaMemcpy(d_indices_of_sorted_synapses_in_orginal_arrays, indices_of_sorted_synapses_in_orginal_arrays, sizeof(int)*total_number_of_synapses, cudaMemcpyHostToDevice));
 	CudaSafeCall(cudaMemcpy(d_component_current_injections_for_each_synapse, component_current_injections_for_each_synapse, sizeof(float) * total_number_of_synapses, cudaMemcpyHostToDevice));
+	CudaSafeCall(cudaMemcpy(d_array_of_sorted_synapse_indices_for_lhs_of_addition, array_of_sorted_synapse_indices_for_lhs_of_addition, sizeof(int) * total_additions_overall, cudaMemcpyHostToDevice));
+	CudaSafeCall(cudaMemcpy(d_array_of_sorted_synapse_indices_for_rhs_of_addition, array_of_sorted_synapse_indices_for_rhs_of_addition, sizeof(int) * total_additions_overall, cudaMemcpyHostToDevice));
+	CudaSafeCall(cudaMemcpy(d_array_of_stage_start_indices, array_of_stage_start_indices, sizeof(int) * number_of_addition_stages, cudaMemcpyHostToDevice));
+	CudaSafeCall(cudaMemcpy(d_array_of_number_of_additions_per_stage, array_of_number_of_additions_per_stage, sizeof(int) * number_of_addition_stages, cudaMemcpyHostToDevice));
 
 }
 
@@ -434,7 +556,7 @@ void Synapses::shuffle_synapses() {
 void Synapses::set_threads_per_block_and_blocks_per_grid(int threads) {
 
 	threads_per_block.x = threads;
-	number_of_synapse_blocks_per_grid = dim3(1000);
+	number_of_synapse_blocks_per_grid = dim3(64);
 
 }
 

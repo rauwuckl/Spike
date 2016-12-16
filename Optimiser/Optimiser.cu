@@ -103,53 +103,15 @@ void Optimiser::RunOptimisation(int start_optimisation_stage_index) {
 			print_line_of_dashes_with_blank_lines_either_side();
 
 
-/// VERY TEMP
-			FourLayerVisionSpikingModel * four_layer_vision_spiking_model2 = new FourLayerVisionSpikingModel();
-			four_layer_vision_spiking_model2->SetTimestep(0.00002);
-			// four_layer_vision_spiking_model->high_fidelity_spike_storage = true;
-			four_layer_vision_spiking_model2->high_fidelity_spike_storage = true;
-
-			// four_layer_vision_spiking_model->inputs_directory = "./Experiments/Set1/Inputs/Inputs_1T_FR_OPT/";
-			// four_layer_vision_spiking_model->inputs_directory = "./Experiments/Set1/Inputs/Inputs_All9Ls_FR_OPT/";
-			four_layer_vision_spiking_model2->inputs_directory = "./Experiments/Set1/Inputs/Inputs_9L9T/";
-
-			four_layer_vision_spiking_model2->LBL_biological_conductance_scaling_constant_lambda_E2E_FF[0] = 0.000701904297;
-			four_layer_vision_spiking_model2->E2E_FF_SYNAPSES_ON = true;
-
-			four_layer_vision_spiking_model2->LBL_biological_conductance_scaling_constant_lambda_E2E_L[0] = 0.000015974045;
-			four_layer_vision_spiking_model2->E2E_L_SYNAPSES_ON = true;
-
-			four_layer_vision_spiking_model2->number_of_non_input_layers_to_simulate = 1;
-
-			four_layer_vision_spiking_model2->INHIBITORY_NEURONS_ON = true;
-			four_layer_vision_spiking_model2->E2I_L_SYNAPSES_ON = true;
-
-			// FINALISE MODEL + COPY TO DEVICE
-			four_layer_vision_spiking_model2->finalise_model();
-			four_layer_vision_spiking_model2->copy_model_to_device();
-
-			// CREATE SIMULATOR
-			Simulator * simulator = new Simulator(four_layer_vision_spiking_model2, simulator_options_for_each_optimisation_stage[optimisation_stage]);
-			SpikeAnalyser * new_spike_analyser = new SpikeAnalyser(four_layer_vision_spiking_model2->spiking_neurons, four_layer_vision_spiking_model2->input_spiking_neurons);			
 
 
-
-/// VERY TEMP
-
-
-
-
-
-			// FINALISE MODEL + COPY TO DEVICE
-			// four_layer_vision_spiking_model->finalise_model();
-			// four_layer_vision_spiking_model->copy_model_to_device();
+			// // FINALISE MODEL + COPY TO DEVICE
+			four_layer_vision_spiking_model->finalise_model();
+			four_layer_vision_spiking_model->copy_model_to_device();
 
 			// // CREATE SIMULATOR
-			// Simulator * simulator = new Simulator(four_layer_vision_spiking_model, simulator_options_for_each_optimisation_stage[optimisation_stage]);
-			// SpikeAnalyser * new_spike_analyser = new SpikeAnalyser(four_layer_vision_spiking_model->spiking_neurons, four_layer_vision_spiking_model->input_spiking_neurons);
-
-
-
+			Simulator * simulator = new Simulator(four_layer_vision_spiking_model, simulator_options_for_each_optimisation_stage[optimisation_stage]);
+			SpikeAnalyser * new_spike_analyser = new SpikeAnalyser(four_layer_vision_spiking_model->spiking_neurons, four_layer_vision_spiking_model->input_spiking_neurons);
 
 
 			
@@ -162,7 +124,7 @@ void Optimiser::RunOptimisation(int start_optimisation_stage_index) {
 
 			if (iteration_count_for_optimisation_stage > 0) {
 				int total_wrong_count = 0;
-				for (int stimulus_index = 0; stimulus_index < four_layer_vision_spiking_model2->input_spiking_neurons->total_number_of_input_stimuli; stimulus_index++) {
+				for (int stimulus_index = 0; stimulus_index < four_layer_vision_spiking_model->input_spiking_neurons->total_number_of_input_stimuli; stimulus_index++) {
 					for (int neuron_index = 0; neuron_index < 4096; neuron_index++) {
 						if (new_spike_analyser->per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index] != spike_analyser_from_last_optimisation_stage->per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index]) {
 						// if (spike_analyser_from_last_optimisation_stage->per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index]) {

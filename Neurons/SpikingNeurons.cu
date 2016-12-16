@@ -3,6 +3,8 @@
 #include "../Helpers/CUDAErrorCheckHelpers.h"
 
 
+// #include <thrust/dfssafa.h>
+
 // SpikingNeurons Constructor
 SpikingNeurons::SpikingNeurons() {
 
@@ -128,6 +130,8 @@ void SpikingNeurons::update_membrane_potentials(float timestep, float current_ti
 
 void SpikingNeurons::calcuate_total_current_injections(float* d_component_current_injections_for_each_synapse, int total_number_of_synapses) {
 
+
+
 	calcuate_total_current_injections_kernal<<<number_of_neuron_blocks_per_grid, threads_per_block>>>(total_number_of_neurons,
 														d_component_current_injections_for_each_synapse,
 														d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations,
@@ -183,7 +187,6 @@ __global__ void calcuate_total_current_injections_kernal(size_t total_number_of_
 	}
 	__syncthreads();
 }
-
 
 
 

@@ -68,7 +68,7 @@ __global__ void conductance_calculate_postsynaptic_current_injection_components_
 							size_t total_number_of_synapses,
 							float * d_membrane_potentials_v,
 							float * d_synaptic_conductances_g,
-							int * d_sorted_synapse_indices_for_sorted_conductance_calculations,
+							int * d_indices_of_original_synapses_in_sorted_array,
 							float * d_component_current_injections_for_each_synapse);
 
 __global__ void conductance_calculate_total_postsynaptic_current_injections_from_components_kernel(float * d_component_current_injections_for_each_synapse);

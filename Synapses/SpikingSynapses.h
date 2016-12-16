@@ -53,12 +53,52 @@ public:
 
 	virtual void update_synaptic_conductances(float timestep, float current_time_in_seconds);
 	virtual void calculate_postsynaptic_current_injection_components(SpikingNeurons * neurons, float current_time_in_seconds, float timestep);
+	virtual void test_calcuate_total_current_injections_synapses_version_kernal(Neurons * neurons);
 
 	virtual void interact_spikes_with_synapses(SpikingNeurons * neurons, SpikingNeurons * input_neurons, float current_time_in_seconds, float timestep);
 
 	void reset_time_related_synapse_activities();
 
 };
+
+// __global__ void calcuate_total_current_injections_synapses_version_kernal(float* d_component_current_injections_for_each_synapse,
+// 														int* d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations,
+// 														int total_number_of_synapses,
+// 														float* d_current_injections,
+// 														int* d_postsynaptic_neuron_indices,
+// 														int total_number_of_neurons,
+// 														int temp_iteration_index);
+
+__global__ void calcuate_total_current_injections_synapses_version_kernal4(int number_of_addition_stages,
+																		int* d_array_of_stage_start_indices,
+																		int* d_array_of_number_of_additions_per_stage,
+																		int* d_array_of_sorted_synapse_indices_for_lhs_of_addition,
+																		int* d_array_of_sorted_synapse_indices_for_rhs_of_addition,
+																		float* d_component_current_injections_for_each_synapse);
+
+
+__global__ void calcuate_total_current_injections_synapses_version_kernal3(int start_index_for_stage,
+																		int number_of_additions_for_stage,
+																		int* d_array_of_sorted_synapse_indices_for_lhs_of_addition,
+																		int* d_array_of_sorted_synapse_indices_for_rhs_of_addition,
+																		float* d_component_current_injections_for_each_synapse);
+
+__global__ void copy_calculated_current_injections_to_neuron_current_injection_array(int total_number_of_neurons,
+																					float* d_current_injections,
+																					int* d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations,
+																					float* d_component_current_injections_for_each_synapse);
+
+__global__ void calcuate_total_current_injections_synapses_version_kernal2(float* d_component_current_injections_for_each_synapse,
+														int* d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations,
+														int total_number_of_synapses,
+														float* d_current_injections,
+														int* d_postsynaptic_neuron_indices,
+														int total_number_of_neurons,
+														int temp_iteration_index,
+														int* d_indices_of_sorted_synapses_in_orginal_arrays,
+														int* d_per_neuron_afferent_synapse_count,
+														int iteration_buffer);
+
 
 __global__ void move_spikes_towards_synapses_kernel(int* d_presynaptic_neuron_indices,
 								int* d_delays,
