@@ -219,7 +219,6 @@ void SpikingSynapses::update_synaptic_conductances(float timestep, float current
 
 void SpikingSynapses::test_calcuate_total_current_injections_synapses_version_kernal(Neurons * neurons) {
 
-
 calcuate_total_current_injections_synapses_version_kernal4<<<number_of_synapse_blocks_per_grid, threads_per_block>>>(number_of_addition_stages,
 																															d_array_of_stage_start_indices,
 																															d_array_of_number_of_additions_per_stage,
@@ -227,18 +226,6 @@ calcuate_total_current_injections_synapses_version_kernal4<<<number_of_synapse_b
 																															d_array_of_sorted_synapse_indices_for_rhs_of_addition,
 																															d_component_current_injections_for_each_synapse);
 
-
-	// for (int stage_count = 0; stage_count < number_of_addition_stages; stage_count++) {
-
-	// for (int stage_count = 0; stage_count < 1; stage_count++) {
-
-	// 	calcuate_total_current_injections_synapses_version_kernal3<<<number_of_synapse_blocks_per_grid, threads_per_block>>>(array_of_stage_start_indices[stage_count],
-	// 																														array_of_number_of_additions_per_stage[stage_count],
-	// 																														d_array_of_sorted_synapse_indices_for_lhs_of_addition,
-	// 																														d_array_of_sorted_synapse_indices_for_rhs_of_addition,
-	// 																														d_component_current_injections_for_each_synapse);
-
-	// }
 
 	CudaCheckError();
 
@@ -265,52 +252,32 @@ __global__ void calcuate_total_current_injections_synapses_version_kernal4(int n
 	int start_index_for_stage = 0;
 
 	for (int stage_count = 0; stage_count < number_of_addition_stages; stage_count++) {
+
+		int stage_diff = pow(2, stage_count);
+
 		int number_of_additions_for_stage = d_array_of_number_of_additions_per_stage[stage_count];
-		if (stage_count!= 0) {
-			start_index_for_stage += number_of_addition_stages;	
-		}
-		
 
 		int idx = threadIdx.x + blockIdx.x * blockDim.x;
 		while (idx < number_of_additions_for_stage) {
 
-			d_component_current_injections_for_each_synapse[d_array_of_sorted_synapse_indices_for_lhs_of_addition[start_index_for_stage+idx]] += d_component_current_injections_for_each_synapse[d_array_of_sorted_synapse_indices_for_rhs_of_addition[start_index_for_stage+idx]];
+			int lhs_sorted_idx = d_array_of_sorted_synapse_indices_for_lhs_of_addition[start_index_for_stage+idx];
+			int rhs_sorted_idx = lhs_sorted_idx + stage_diff;
+
+			float lhs = d_component_current_injections_for_each_synapse[lhs_sorted_idx];
+			float rhs = d_component_current_injections_for_each_synapse[rhs_sorted_idx];
+
+		 	d_component_current_injections_for_each_synapse[lhs_sorted_idx] = lhs + rhs;
+			// d_component_current_injections_for_each_synapse[lhs_sorted_idx] += d_component_current_injections_for_each_synapse[rhs_sorted_idx];
 
 			idx += blockDim.x * gridDim.x;
-		
 		}
-	// __syncthreads();
+		start_index_for_stage += number_of_additions_for_stage;	
+		__syncthreads();
 
 	}
 
 
 }
-
-
-
-// __global__ void calcuate_total_current_injections_synapses_version_kernal3(int start_index_for_stage,
-// 																		int number_of_additions_for_stage,
-// 																		int* d_array_of_sorted_synapse_indices_for_lhs_of_addition,
-// 																		int* d_array_of_sorted_synapse_indices_for_rhs_of_addition,
-// 																		float* d_component_current_injections_for_each_synapse) {
-
-
-// 	for (int stage_count = 0; stage_count < 17; stage_count++) {
-
-// 		int idx = threadIdx.x + blockIdx.x * blockDim.x;
-// 		while (idx < number_of_additions_for_stage) {
-
-// 			d_component_current_injections_for_each_synapse[d_array_of_sorted_synapse_indices_for_lhs_of_addition[start_index_for_stage+idx]] += d_component_current_injections_for_each_synapse[d_array_of_sorted_synapse_indices_for_rhs_of_addition[start_index_for_stage+idx]];
-
-// 			idx += blockDim.x * gridDim.x;
-		
-// 		}
-// 	__syncthreads();
-
-// 	}
-
-
-// }
 
 
 __global__ void copy_calculated_current_injections_to_neuron_current_injection_array(int total_number_of_neurons,
@@ -329,100 +296,6 @@ __global__ void copy_calculated_current_injections_to_neuron_current_injection_a
 
 
 }
-
-
-
-
-// void SpikingSynapses::test_calcuate_total_current_injections_synapses_version_kernal(Neurons * neurons) {
-
-
-// 	for (int temp_iteration_index = 0; temp_iteration_index < 5; temp_iteration_index++) {
-
-// 		int iteration_buffer = powf(temp_iteration_index, 2);
-
-// 		// printf("temp_iteration_index: %d\n", temp_iteration_index);
-// 		// calcuate_total_current_injections_synapses_version_kernal<<<number_of_synapse_blocks_per_grid, threads_per_block>>>(d_component_current_injections_for_each_synapse,
-// 		// 												neurons->d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations,
-// 		// 												total_number_of_synapses,
-// 		// 												neurons->d_current_injections,
-// 		// 												d_postsynaptic_neuron_indices,
-// 		// 												neurons->total_number_of_neurons,
-// 		// 												temp_iteration_index);
-
-// 		calcuate_total_current_injections_synapses_version_kernal2<<<number_of_synapse_blocks_per_grid, threads_per_block>>>(d_component_current_injections_for_each_synapse,
-// 														neurons->d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations,
-// 														total_number_of_synapses,
-// 														neurons->d_current_injections,
-// 														d_postsynaptic_neuron_indices,
-// 														neurons->total_number_of_neurons,
-// 														temp_iteration_index,
-// 														d_indices_of_sorted_synapses_in_orginal_arrays,
-// 														neurons->d_per_neuron_afferent_synapse_count,
-// 														iteration_buffer);
-
-// 		CudaCheckError();
-
-// 	}
-
-// 	// printf("end\n");
-
-// }
-
-
-// __global__ void calcuate_total_current_injections_synapses_version_kernal2(float* d_component_current_injections_for_each_synapse,
-// 														int* d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations,
-// 														int total_number_of_synapses,
-// 														float* d_current_injections,
-// 														int* d_postsynaptic_neuron_indices,
-// 														int total_number_of_neurons,
-// 														int temp_iteration_index,
-// 														int* d_indices_of_sorted_synapses_in_orginal_arrays,
-// 														int* d_per_neuron_afferent_synapse_count,
-// 														int iteration_buffer) {
-
-// 	// Get thread IDs
-// 	int t_idx = threadIdx.x + blockIdx.x * blockDim.x;
-// 	int idx = t_idx;
-
-// 	temp_iteration_index = 0;
-
-// 	total_number_of_synapses = total_number_of_synapses / 2;
-
-// 	while (idx < total_number_of_synapses) {
-
-// 		int sorted_syn1_idx = idx;
-// 		int sorted_syn2_idx = sorted_syn1_idx + iteration_buffer;
-
-// 		if (sorted_syn2_idx < total_number_of_synapses) {
-
-// 			int idx_of_syn1_in_original_arrays = d_indices_of_sorted_synapses_in_orginal_arrays[sorted_syn1_idx];
-// 			int idx_of_syn2_in_original_arrays = d_indices_of_sorted_synapses_in_orginal_arrays[sorted_syn2_idx];
-
-// 			int syn1_postsyn_neuron_idx = d_postsynaptic_neuron_indices[idx_of_syn1_in_original_arrays];
-// 			int syn2_postsyn_neuron_idx = d_postsynaptic_neuron_indices[idx_of_syn2_in_original_arrays];
-
-// 			if (syn1_postsyn_neuron_idx == syn2_postsyn_neuron_idx) {
-
-// 				// int start_idx_for_postsyn_neurons_sorted_syns = d_postsynaptic_neuron_start_indices_for_sorted_conductance_calculations[syn1_postsyn_neuron_idx];
-// 				// int total_number_of_afferent_synapses_for_postsyn_neuron = d_per_neuron_afferent_synapse_count[syn1_postsyn_neuron_idx];
-// 				// int end_idx_for_postsyn_neurons_sorted_syns = start_idx_for_postsyn_neurons_sorted_syns + total_number_of_afferent_synapses_for_postsyn_neuron;
-
-// 				// if (sorted_syn2_idx < end_idx_for_postsyn_neurons_sorted_syns) {
-
-// 					d_component_current_injections_for_each_synapse[sorted_syn1_idx] += d_component_current_injections_for_each_synapse[sorted_syn2_idx];
-
-// 				// }
-
-// 			}
-
-// 		}
-
-// 		idx += blockDim.x * gridDim.x;
-
-// 	}
-// 	__syncthreads();
-
-// }
 
 
 

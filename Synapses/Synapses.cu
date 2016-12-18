@@ -8,6 +8,7 @@
 #include "../Helpers/CUDAErrorCheckHelpers.h"
 #include "../Helpers/TerminalHelpers.h"
 #include "../Helpers/MemoryUsage.h"
+#include "../Helpers/TimerWithMessages.h"
 
 #include <algorithm> // for random shuffle
 
@@ -325,6 +326,8 @@ void Synapses::AddGroup(int presynaptic_group_id,
 
 void Synapses::set_up_current_injection_interface(Neurons * neurons) {
 
+	TimerWithMessages *temp_timer = new TimerWithMessages("set_up_current_injection_interface\n");
+
 	print_memory_usage();
 
 	indices_of_original_synapses_in_sorted_array = (int*)malloc(total_number_of_synapses * sizeof(int));
@@ -382,12 +385,14 @@ void Synapses::set_up_current_injection_interface(Neurons * neurons) {
 
 			for (int sorted_synapse_index = 0; sorted_synapse_index < total_number_of_synapses; sorted_synapse_index++) {
 
-				int original_synapse_index = indices_of_original_synapses_in_sorted_array[sorted_synapse_index];
+				int original_synapse_index = indices_of_sorted_synapses_in_orginal_arrays[sorted_synapse_index];
 				int postsynaptic_neuron_index = postsynaptic_neuron_indices[original_synapse_index];
 				int start_index_for_postsyn_neurons_aff_syns_in_sorted_array = neurons->postsynaptic_neuron_start_indices_for_sorted_conductance_calculations[postsynaptic_neuron_index];
 				int original_synapse_index_zeroed_for_postsyn = sorted_synapse_index - start_index_for_postsyn_neurons_aff_syns_in_sorted_array;
 
 				if (original_synapse_index_zeroed_for_postsyn % stage_buff == 0) {
+
+					
 
 					int total_afferent_synapses_for_postsynaptic_neuron = neurons->per_neuron_afferent_synapse_count[postsynaptic_neuron_index];
 
@@ -395,7 +400,16 @@ void Synapses::set_up_current_injection_interface(Neurons * neurons) {
 
 					int sorted_synapse_index_2 = sorted_synapse_index + stage_diff;
 
-					if (sorted_synapse_index_2 < end_index_for_postsyn_neurons_aff_syns_in_sorted_array) {
+					if (sorted_synapse_index_2 <= end_index_for_postsyn_neurons_aff_syns_in_sorted_array) {
+
+
+						// if (stage_count == 4) printf("original_synapse_index_zeroed_for_postsyn: %d\n", original_synapse_index_zeroed_for_postsyn);
+
+						// if (stage_count == 5) {
+						// printf("stage_count: %d\n", stage_count);
+						// printf("sorted_synapse_index: %d\n", sorted_synapse_index);
+						// printf("sorted_synapse_index_2: %d\n", sorted_synapse_index_2);
+						// }
 
 						if (step_index == 1) {
 							array_of_sorted_synapse_indices_for_lhs_of_addition[total_new_additions_overall] = sorted_synapse_index;
@@ -405,24 +419,22 @@ void Synapses::set_up_current_injection_interface(Neurons * neurons) {
 						total_new_additions_for_stage++;
 						total_new_additions_overall++;
 						was_new_addition = true;
-
 					}
 
 				}
 			
 			}
 
-			// printf("total_new_additions_for_stage: %d\n", total_new_additions_for_stage);
+			printf("total_new_additions_for_stage: %d\n", total_new_additions_for_stage);
 
 			if (step_index == 1) {
 				array_of_number_of_additions_per_stage[stage_count] = total_new_additions_for_stage;
 			}
 
-			stage_count++;
-
-			number_of_addition_stages = stage_count;
-
 			if (!was_new_addition) break;
+
+			stage_count++;
+			number_of_addition_stages = stage_count;
 
 		}
 
@@ -433,11 +445,15 @@ void Synapses::set_up_current_injection_interface(Neurons * neurons) {
 			array_of_number_of_additions_per_stage = (int*)malloc(stage_count * sizeof(int));
 		}
 
+		printf("total_number_of_synapses: %d\n", total_number_of_synapses);
+		printf("total_new_additions_overall: %d\n", total_new_additions_overall);
 		total_additions_overall = total_new_additions_overall;
 
 	}
 
 	// print_memory_usage();
+
+	temp_timer->stop_timer_and_log_time_and_message("set_up_current_injection_interface DONE.", true);
 
 
 }
