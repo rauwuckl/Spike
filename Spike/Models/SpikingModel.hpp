@@ -19,6 +19,7 @@
 #include "../SpikeAnalyser/SpikeAnalyser.hpp"
 #include "../Helpers/TimerWithMessages.hpp"
 #include "../Helpers/RandomStateManager.hpp"
+class Optimiser; //Forward Declaration
 // #include "../Helpers/TerminalHelpers.hpp"
 #include <string>
 #include <fstream>
@@ -54,6 +55,9 @@ public:
 
   void reset_state();
   void perform_per_timestep_model_instructions(float current_time_in_seconds, bool apply_stdp_to_relevant_synapses);
+
+  // For optimiser
+  virtual void setup_optimisation_stage_specific_model_parameters(int optimisation_stage, Optimiser * optimiser); 
 
   virtual void finalise_model();
 

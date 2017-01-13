@@ -8,9 +8,9 @@
 
 
 // Constructors
-Optimiser::Optimiser(FourLayerVisionSpikingModel* four_layer_vision_spiking_model_parameter) {
+Optimiser::Optimiser(SpikingModel* spiking_model_parameter) {
 
-	four_layer_vision_spiking_model = four_layer_vision_spiking_model_parameter;
+	spiking_model = spiking_model_parameter;
 
 }
 
@@ -82,14 +82,14 @@ void Optimiser::RunOptimisation(int start_optimisation_stage_index, bool test_la
 			print_line_of_dashes_with_blank_lines_either_side();
 
 			// FINALISE MODEL + COPY TO DEVICE
-			four_layer_vision_spiking_model->finalise_model();
+			spiking_model->finalise_model();
 
 			
 			simulator_options_for_each_optimisation_stage[optimisation_stage]->run_simulation_general_options->delete_spike_analyser_on_simulator_destruction = !test_last_spikes_match;
 
 
 			// CREATE SIMULATOR
-			Simulator * simulator = new Simulator(four_layer_vision_spiking_model, simulator_options_for_each_optimisation_stage[optimisation_stage]);
+			Simulator * simulator = new Simulator(spiking_model, simulator_options_for_each_optimisation_stage[optimisation_stage]);
 
 			// RUN SIMULATION
 			simulator->RunSimulation();
@@ -100,36 +100,31 @@ void Optimiser::RunOptimisation(int start_optimisation_stage_index, bool test_la
 
 			// Temp testing
 
-			if (test_last_spikes_match) {
+			// if (test_last_spikes_match) {
 
-				printf("TEST: Comparte spike totals to last optimisation iteration\n");
+			// 	printf("TEST: Comparte spike totals to last optimisation iteration\n");
 
-				if (iteration_count_for_optimisation_stage > 0) {
-					int total_wrong_count = 0;
-					for (int stimulus_index = 0; stimulus_index < four_layer_vision_spiking_model->input_spiking_neurons->total_number_of_input_stimuli; stimulus_index++) {
-						for (int neuron_index = 0; neuron_index < 4096; neuron_index++) {
-							if (new_spike_analyser->per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index] != spike_analyser_from_last_optimisation_stage->per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index]) {
-							// if (spike_analyser_from_last_optimisation_stage->per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index]) {
-								printf("new_spike_analyser->per_stimulus_per_neuron_spike_counts[%d][%d]: %d\n", stimulus_index, neuron_index, new_spike_analyser->per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index]);
-								printf("spike_analyser_from_last_optimisation_stage->per_stimulus_per_neuron_spike_counts[%d][%d]: %d\n", stimulus_index, neuron_index, spike_analyser_from_last_optimisation_stage->per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index]);
-								total_wrong_count++;
-								printf("neuron_index: %d\n", neuron_index);
-								print_message_and_exit("Test failure: Spike totals do not match");
-								// if (2329 == neuron_index) {
-								// 	continue;
-								// } else {
-								// 	print_message_and_exit("something else!!");
-								// }
-							}		
-						}
-					}
-					printf("total_wrong_count: %d\n", total_wrong_count);
-				}
+			// 	if (iteration_count_for_optimisation_stage > 0) {
+			// 		int total_wrong_count = 0;
+			// 		for (int stimulus_index = 0; stimulus_index < four_layer_vision_spiking_model->input_spiking_neurons->total_number_of_input_stimuli; stimulus_index++) {
+			// 			for (int neuron_index = 0; neuron_index < 4096; neuron_index++) {
+			// 				if (new_spike_analyser->per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index] != spike_analyser_from_last_optimisation_stage->per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index]) {
+			// 				// if (spike_analyser_from_last_optimisation_stage->per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index]) {
+			// 					printf("new_spike_analyser->per_stimulus_per_neuron_spike_counts[%d][%d]: %d\n", stimulus_index, neuron_index, new_spike_analyser->per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index]);
+			// 					printf("spike_analyser_from_last_optimisation_stage->per_stimulus_per_neuron_spike_counts[%d][%d]: %d\n", stimulus_index, neuron_index, spike_analyser_from_last_optimisation_stage->per_stimulus_per_neuron_spike_counts[stimulus_index][neuron_index]);
+			// 					total_wrong_count++;
+			// 					printf("neuron_index: %d\n", neuron_index);
+			// 					print_message_and_exit("Test failure: Spike totals do not match");
+			// 				}		
+			// 			}
+			// 		}
+			// 		printf("total_wrong_count: %d\n", total_wrong_count);
+			// // 	}
 
-				delete spike_analyser_from_last_optimisation_stage;
-				spike_analyser_from_last_optimisation_stage = new_spike_analyser;
+			// 	delete spike_analyser_from_last_optimisation_stage;
+			// 	spike_analyser_from_last_optimisation_stage = new_spike_analyser;
 
-			}
+			// }
 
 			float optimisation_output_score = 0.0;
 
@@ -182,6 +177,8 @@ void Optimiser::RunOptimisation(int start_optimisation_stage_index, bool test_la
 					
 			delete simulator;
 
+			if (!test_last_spikes_match) delete new_spike_analyser;
+
 			print_line_of_dashes_with_blank_lines_either_side();
 			printf("Backend::memory_free_bytes(): %lu", Backend::memory_free_bytes());
 			print_line_of_dashes_with_blank_lines_either_side();
@@ -214,25 +211,6 @@ void Optimiser::RunOptimisation(int start_optimisation_stage_index, bool test_la
 }
 
 
-void Optimiser::setup_optimisation_stage_specific_model_parameters(int optimisation_stage_index) {
-
-	*synapse_bool_pointers_to_turn_on_for_each_optimisation_stage[optimisation_stage_index] = true;
-	*model_pointers_to_be_optimised_for_each_optimisation_stage[optimisation_stage_index] = final_optimal_parameter_for_each_optimisation_stage[optimisation_stage_index];
-
-	if (use_inhibitory_neurons_for_each_optimisation_stage[optimisation_stage_index]) {
-
-		four_layer_vision_spiking_model->INHIBITORY_NEURONS_ON = use_inhibitory_neurons_for_each_optimisation_stage[optimisation_stage_index];
-
-	}
-	if (number_of_non_input_layers_to_simulate_for_each_optimisation_stage[optimisation_stage_index] > four_layer_vision_spiking_model->number_of_non_input_layers_to_simulate) {
-
-		four_layer_vision_spiking_model->number_of_non_input_layers_to_simulate = number_of_non_input_layers_to_simulate_for_each_optimisation_stage[optimisation_stage_index];
-
-	} 
-
-}
-
-
 void Optimiser::write_final_optimisation_parameters_to_file(string full_output_directory) {
 
 	for (int optimisation_stage = 0; optimisation_stage < number_of_optimisation_stages; optimisation_stage++) {
@@ -251,6 +229,19 @@ void Optimiser::write_final_optimisation_parameters_to_file(string full_output_d
 	}
 
 }
+
+
+void Optimiser::setup_optimisation_stage_specific_model_parameters(int optimisation_stage) {
+
+	*synapse_bool_pointers_to_turn_on_for_each_optimisation_stage[optimisation_stage] = true;
+	*model_pointers_to_be_optimised_for_each_optimisation_stage[optimisation_stage] = final_optimal_parameter_for_each_optimisation_stage[optimisation_stage];
+
+	spiking_model->setup_optimisation_stage_specific_model_parameters(optimisation_stage, this);
+
+
+
+}
+
 
 // void Optimiser::set_final_optimised_parameters_network() {
 

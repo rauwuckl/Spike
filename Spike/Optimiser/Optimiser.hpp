@@ -2,7 +2,7 @@
 #define Optimiser_H
 
 #include "../Simulator/Simulator.hpp"
-#include "../Models/FourLayerVisionSpikingModel.hpp"
+#include "../Models/SpikingModel.hpp"
 
 #include <stdio.h>
 #include <math.h> 
@@ -53,9 +53,9 @@ struct Optimiser_Options {
 class Optimiser{
 public:
 	// Constructor/Destructor
-	Optimiser(FourLayerVisionSpikingModel* four_layer_vision_spiking_model_parameter);
+	Optimiser(SpikingModel* spiking_model_parameter);
 
-	FourLayerVisionSpikingModel * four_layer_vision_spiking_model = nullptr;
+	SpikingModel * spiking_model = nullptr;
 
 	int number_of_optimisation_stages = 0;
 
@@ -84,7 +84,7 @@ public:
 	void RunOptimisation(const int start_optimisation_stage_index = 0, bool test_last_spikes_match = false);
 
 protected:
-	void setup_optimisation_stage_specific_model_parameters(int optimisation_stage_index);
+	void setup_optimisation_stage_specific_model_parameters(int optimisation_stage);
 
 };
 

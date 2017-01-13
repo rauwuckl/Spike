@@ -154,3 +154,8 @@ void SpikingModel::perform_per_timestep_model_instructions(float current_time_in
 
 }
 
+
+
+void SpikingModel::setup_optimisation_stage_specific_model_parameters(int optimisation_stage, Optimiser * optimiser) {
+
+}
