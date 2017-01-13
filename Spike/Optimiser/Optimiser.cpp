@@ -177,8 +177,6 @@ void Optimiser::RunOptimisation(int start_optimisation_stage_index, bool test_la
 					
 			delete simulator;
 
-			if (!test_last_spikes_match) delete new_spike_analyser;
-
 			print_line_of_dashes_with_blank_lines_either_side();
 			printf("Backend::memory_free_bytes(): %lu", Backend::memory_free_bytes());
 			print_line_of_dashes_with_blank_lines_either_side();
