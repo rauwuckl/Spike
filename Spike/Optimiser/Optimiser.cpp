@@ -8,9 +8,10 @@
 
 
 // Constructors
-Optimiser::Optimiser(SpikingModel* spiking_model_parameter) {
+Optimiser::Optimiser(SpikingModel* spiking_model_parameter, string full_output_directory_parameter) {
 
 	spiking_model = spiking_model_parameter;
+	full_output_directory = full_output_directory_parameter;
 
 }
 
@@ -24,7 +25,6 @@ void Optimiser::AddOptimisationStage(Optimiser_Options * optimisation_stage_opti
 	simulator_options_for_each_optimisation_stage = (Simulator_Options**)realloc(simulator_options_for_each_optimisation_stage, number_of_optimisation_stages*sizeof(Simulator_Options*));
 	model_pointers_to_be_optimised_for_each_optimisation_stage = (float**)realloc(model_pointers_to_be_optimised_for_each_optimisation_stage, number_of_optimisation_stages*sizeof(float*));
 	synapse_bool_pointers_to_turn_on_for_each_optimisation_stage = (bool**)realloc(synapse_bool_pointers_to_turn_on_for_each_optimisation_stage, number_of_optimisation_stages*sizeof(bool*));
-	use_inhibitory_neurons_for_each_optimisation_stage = (bool*)realloc(use_inhibitory_neurons_for_each_optimisation_stage, number_of_optimisation_stages*sizeof(bool));
 	number_of_non_input_layers_to_simulate_for_each_optimisation_stage = (int*)realloc(number_of_non_input_layers_to_simulate_for_each_optimisation_stage, number_of_optimisation_stages*sizeof(int));
 	index_of_neuron_group_of_interest_for_each_optimisation_stage = (int*)realloc(index_of_neuron_group_of_interest_for_each_optimisation_stage, number_of_optimisation_stages*sizeof(int));
 	initial_optimisation_parameter_min_for_each_optimisation_stage = (float*)realloc(initial_optimisation_parameter_min_for_each_optimisation_stage, number_of_optimisation_stages*sizeof(float));
@@ -33,11 +33,11 @@ void Optimiser::AddOptimisationStage(Optimiser_Options * optimisation_stage_opti
 	optimisation_minimum_error_for_each_optimisation_stage = (float*)realloc(optimisation_minimum_error_for_each_optimisation_stage, number_of_optimisation_stages*sizeof(float));
 	positive_effect_of_postive_change_in_parameter_for_each_optimisation_stage = (bool*)realloc(positive_effect_of_postive_change_in_parameter_for_each_optimisation_stage, number_of_optimisation_stages*sizeof(bool));
 	score_to_use_for_each_optimisation_stage = (int*)realloc(score_to_use_for_each_optimisation_stage, number_of_optimisation_stages*sizeof(int));
+	layer_to_turn_inhibitory_neurons_on_for_each_optimisation_stage= (int*)realloc(layer_to_turn_inhibitory_neurons_on_for_each_optimisation_stage, number_of_optimisation_stages*sizeof(int));
 
 	simulator_options_for_each_optimisation_stage[new_optimisation_stage] = simulator_options_parameter;
 	model_pointers_to_be_optimised_for_each_optimisation_stage[new_optimisation_stage] = optimisation_stage_options->model_pointer_to_be_optimised;
 	synapse_bool_pointers_to_turn_on_for_each_optimisation_stage[new_optimisation_stage] = optimisation_stage_options->synapse_bool_pointer_to_turn_on;
-	use_inhibitory_neurons_for_each_optimisation_stage[new_optimisation_stage] = optimisation_stage_options->use_inhibitory_neurons;
 	number_of_non_input_layers_to_simulate_for_each_optimisation_stage[new_optimisation_stage] = optimisation_stage_options->number_of_non_input_layers_to_simulate;
 	index_of_neuron_group_of_interest_for_each_optimisation_stage[new_optimisation_stage] = optimisation_stage_options->index_of_neuron_group_of_interest;
 	initial_optimisation_parameter_min_for_each_optimisation_stage[new_optimisation_stage] = optimisation_stage_options->initial_optimisation_parameter_min;
@@ -46,6 +46,7 @@ void Optimiser::AddOptimisationStage(Optimiser_Options * optimisation_stage_opti
 	optimisation_minimum_error_for_each_optimisation_stage[new_optimisation_stage] = optimisation_stage_options->optimisation_minimum_error;
 	positive_effect_of_postive_change_in_parameter_for_each_optimisation_stage[new_optimisation_stage] = optimisation_stage_options->positive_effect_of_postive_change_in_parameter;
 	score_to_use_for_each_optimisation_stage[new_optimisation_stage] = (int)optimisation_stage_options->score_to_use;
+	layer_to_turn_inhibitory_neurons_on_for_each_optimisation_stage[new_optimisation_stage] = optimisation_stage_options->layer_to_turn_inhibitory_neurons_on;
 
 	final_optimal_parameter_for_each_optimisation_stage = (float*)realloc(final_optimal_parameter_for_each_optimisation_stage, number_of_optimisation_stages*sizeof(float));
 	final_iteration_count_for_each_optimisation_stage = (int*)realloc(final_iteration_count_for_each_optimisation_stage, number_of_optimisation_stages*sizeof(int));
@@ -54,7 +55,8 @@ void Optimiser::AddOptimisationStage(Optimiser_Options * optimisation_stage_opti
 
 
 void Optimiser::RunOptimisation(int start_optimisation_stage_index, bool test_last_spikes_match) {
-
+	printf("start_optimisation_stage_index: %d\n", start_optimisation_stage_index);
+	printf("number_of_optimisation_stages: %d\n", number_of_optimisation_stages);
 	for (int optimisation_stage = start_optimisation_stage_index; optimisation_stage < number_of_optimisation_stages; optimisation_stage++) {
 
 		float optimisation_parameter_min = initial_optimisation_parameter_min_for_each_optimisation_stage[optimisation_stage];
@@ -158,6 +160,7 @@ void Optimiser::RunOptimisation(int start_optimisation_stage_index, bool test_la
 			if (fabs(difference_between_ideal_score_and_output_score) < optimisation_minimum_error_for_each_optimisation_stage[optimisation_stage]) {
 			
 				final_optimal_parameter_for_each_optimisation_stage[optimisation_stage] = test_optimisation_parameter_value;
+				write_optimisation_stage_parameters_to_file(optimisation_stage);
 				break;
 			
 			}
@@ -225,6 +228,23 @@ void Optimiser::write_final_optimisation_parameters_to_file(string full_output_d
 
 
 	}
+
+}
+
+
+void Optimiser::write_optimisation_stage_parameters_to_file(int optimisation_stage) {
+
+	printf("write_optimisation_stage_parameters_to_file\n");
+
+	string file_IDs = full_output_directory + to_string(optimisation_stage);
+
+	ofstream spikeidfile, spiketimesfile;
+	spikeidfile.open((file_IDs + ".txt"), ios::out | ios::binary);
+	// spiketimesfile.open((file_Times + ".txt"), ios::out | ios::binary);
+
+	spikeidfile << to_string(final_optimal_parameter_for_each_optimisation_stage[optimisation_stage]) << endl;
+
+	spikeidfile.close();
 
 }
 
