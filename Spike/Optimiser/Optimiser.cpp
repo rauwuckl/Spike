@@ -4,6 +4,7 @@
 #include "../Helpers/TimerWithMessages.hpp"
 #include "../Helpers/TerminalHelpers.hpp"
 #include "../Helpers/Memory.hpp"
+#include <sys/stat.h>
 
 
 
@@ -57,6 +58,16 @@ void Optimiser::AddOptimisationStage(Optimiser_Options * optimisation_stage_opti
 void Optimiser::RunOptimisation(int start_optimisation_stage_index, bool test_last_spikes_match) {
 	printf("start_optimisation_stage_index: %d\n", start_optimisation_stage_index);
 	printf("number_of_optimisation_stages: %d\n", number_of_optimisation_stages);
+
+	string file_IDs2 = full_output_directory + "PREVIOUS_TEST_PARAMETER_VALUES_FOR_STAGE";
+	ofstream spikeidfile2;
+	spikeidfile2.open((file_IDs2 + ".txt"), ios::out | ios::binary | ios::trunc);
+	// spikeidfile2.open((file_IDs2 + ".txt"), ios::out | ios::binary);
+
+	
+
+
+
 	for (int optimisation_stage = start_optimisation_stage_index; optimisation_stage < number_of_optimisation_stages; optimisation_stage++) {
 
 		float optimisation_parameter_min = initial_optimisation_parameter_min_for_each_optimisation_stage[optimisation_stage];
@@ -153,7 +164,21 @@ void Optimiser::RunOptimisation(int start_optimisation_stage_index, bool test_la
 			}
 
 			printf("OPTIMISATION ITERATION COMPLETED...\nTest Optimisation Parameter Value: %.16f\nOptimisation Output Score: %f\nOptimisation Ideal Output Score: %f\n", test_optimisation_parameter_value, optimisation_output_score, optimisation_ideal_output_score);
+			string file_IDs = full_output_directory + "OPTIMISATION_STATE";
+			ofstream spikeidfile;
+			spikeidfile.open((file_IDs + ".txt"), ios::out | ios::binary | ios::trunc);
+			spikeidfile << "optimisation_stage: " << to_string(optimisation_stage) << endl;
+			spikeidfile << "iteration_count_for_optimisation_stage: " << to_string(iteration_count_for_optimisation_stage) << endl << endl;
+			spikeidfile << "test_optimisation_parameter_value: " << to_string(test_optimisation_parameter_value) << endl << endl;
+			spikeidfile << "optimisation_output_score: " << to_string(optimisation_output_score) << endl;
+			spikeidfile << "optimisation_ideal_output_score: " << to_string(optimisation_ideal_output_score) << endl;
+			spikeidfile << "optimisation_minimum_error_for_each_optimisation_stage[optimisation_stage]: " << to_string(optimisation_minimum_error_for_each_optimisation_stage[optimisation_stage]) << endl << endl;
+			spikeidfile.close();
 
+			// ofstream spikeidfile3;
+			// spikeidfile2.open((file_IDs2 + ".txt"), ios::out | ios::binary);
+			spikeidfile2 << to_string(test_optimisation_parameter_value) << ", " << to_string(optimisation_output_score) << ", " << to_string(optimisation_ideal_output_score) << endl;
+			// spikeidfile2.close();
 
 			float difference_between_ideal_score_and_output_score = optimisation_ideal_output_score - optimisation_output_score; // Supposing the function we are trying to optimise is monotonic, the sign of this value gives the direction that the optimisation must move in.
 
@@ -186,6 +211,20 @@ void Optimiser::RunOptimisation(int start_optimisation_stage_index, bool test_la
 
 		}
 
+		spikeidfile2.close();
+
+		if (mkdir((full_output_directory + "/PREVIOUS_TEST_PARAMETER_VALUES_FOR_STAGES/").c_str(),S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH)==0)
+			printf("\nDirectory created\n");
+
+		FILE * infile  = fopen((file_IDs2 + ".txt").c_str(),  "rb");
+		string file_IDs2 = full_output_directory + "/PREVIOUS_TEST_PARAMETER_VALUES_FOR_STAGES/" + to_string(optimisation_stage) + ".txt";
+		FILE * outfile = fopen(file_IDs2.c_str(), "wb");
+
+		filecopy(outfile, infile);
+
+    	fclose(infile);
+    	fclose(outfile);
+
 		print_line_of_dashes_with_blank_lines_either_side();
 		printf("Backend::memory_free_bytes(): %lu", Backend::memory_free_bytes());
 		print_line_of_dashes_with_blank_lines_either_side();
@@ -216,16 +255,7 @@ void Optimiser::write_final_optimisation_parameters_to_file(string full_output_d
 
 	for (int optimisation_stage = 0; optimisation_stage < number_of_optimisation_stages; optimisation_stage++) {
 
-		string file_IDs = full_output_directory + to_string(optimisation_stage);
-
-		ofstream spikeidfile, spiketimesfile;
-		spikeidfile.open((file_IDs + ".txt"), ios::out | ios::binary);
-		// spiketimesfile.open((file_Times + ".txt"), ios::out | ios::binary);
-
-		spikeidfile << to_string(final_optimal_parameter_for_each_optimisation_stage[optimisation_stage]) << endl;
-
-		spikeidfile.close();
-
+		write_optimisation_stage_parameters_to_file(optimisation_stage);
 
 	}
 
@@ -234,13 +264,10 @@ void Optimiser::write_final_optimisation_parameters_to_file(string full_output_d
 
 void Optimiser::write_optimisation_stage_parameters_to_file(int optimisation_stage) {
 
-	printf("write_optimisation_stage_parameters_to_file\n");
-
 	string file_IDs = full_output_directory + to_string(optimisation_stage);
 
-	ofstream spikeidfile, spiketimesfile;
+	ofstream spikeidfile;
 	spikeidfile.open((file_IDs + ".txt"), ios::out | ios::binary);
-	// spiketimesfile.open((file_Times + ".txt"), ios::out | ios::binary);
 
 	spikeidfile << to_string(final_optimal_parameter_for_each_optimisation_stage[optimisation_stage]) << endl;
 
@@ -258,6 +285,20 @@ void Optimiser::setup_optimisation_stage_specific_model_parameters(int optimisat
 
 
 
+}
+
+void Optimiser::filecopy(FILE *dest, FILE *src)
+{
+	char ch;
+	rewind(src);
+	rewind(dest);
+	while((ch=fgetc(src)) != EOF)
+	{
+		fputc(ch, dest);
+	}
+	fflush(dest);
+	rewind(src);
+	rewind(dest);
 }
 
 

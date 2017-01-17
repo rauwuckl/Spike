@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
+
 using namespace std;
 
 
@@ -87,6 +88,7 @@ public:
 
 protected:
 	void setup_optimisation_stage_specific_model_parameters(int optimisation_stage);
+	void filecopy(FILE *dest, FILE *src);
 
 };
 
