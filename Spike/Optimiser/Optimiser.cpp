@@ -5,6 +5,8 @@
 #include "../Helpers/TerminalHelpers.hpp"
 #include "../Helpers/Memory.hpp"
 #include <sys/stat.h>
+#include <sstream>
+#include <iomanip>
 
 
 
@@ -269,7 +271,12 @@ void Optimiser::write_optimisation_stage_parameters_to_file(int optimisation_sta
 	ofstream spikeidfile;
 	spikeidfile.open((file_IDs + ".txt"), ios::out | ios::binary);
 
-	spikeidfile << to_string(final_optimal_parameter_for_each_optimisation_stage[optimisation_stage]) << endl;
+	stringstream stream;
+	stream << fixed << setprecision(12) << final_optimal_parameter_for_each_optimisation_stage[optimisation_stage];
+	string s = stream.str();
+
+	spikeidfile << s << endl;
+	// spikeidfile << to_string(final_optimal_parameter_for_each_optimisation_stage[optimisation_stage]) << endl;
 
 	spikeidfile.close();
 
