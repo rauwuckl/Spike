@@ -10,12 +10,15 @@
 // SpikeAnalyser Constructor
 SpikeAnalyser::SpikeAnalyser(SpikingNeurons *neurons_parameter,
                              InputSpikingNeurons *input_neurons_parameter,
-                             CountNeuronSpikesRecordingElectrodes *electrodes_parameter) {
+                             CountNeuronSpikesRecordingElectrodes *electrodes_parameter,
+                             int object_index_for_single_object_presentation_parameter) {
 	neurons = neurons_parameter;
 	input_neurons = input_neurons_parameter;
         count_electrodes = electrodes_parameter;
         assert(count_electrodes != nullptr &&
                "You need to have some electrodes!");
+    object_index_for_single_object_presentation = object_index_for_single_object_presentation_parameter;
+
 //	number_of_neurons_in_single_cell_analysis_group = 0;
 
 	information_scores_for_each_object_and_neuron = nullptr;
@@ -38,7 +41,6 @@ SpikeAnalyser::SpikeAnalyser(SpikingNeurons *neurons_parameter,
 	maximum_information_score_count_multiplied_by_sum_of_information_scores = -1.0;
 
 	per_stimulus_per_neuron_spike_counts = new int*[input_neurons->total_number_of_input_stimuli];
-	
 
 	for (int stimulus_index = 0; stimulus_index < input_neurons->total_number_of_input_stimuli; stimulus_index++) {
 		per_stimulus_per_neuron_spike_counts[stimulus_index] = new int[neurons->total_number_of_neurons];
@@ -154,6 +156,8 @@ void SpikeAnalyser::calculate_various_neuron_spike_totals_and_averages(float pre
         running_count_of_non_silent_neurons_per_neuron_group = new int [neurons->total_number_of_groups];
 	total_number_of_neuron_spikes = 0;
 	
+	int number_of_stimuli_to_calculate_for = input_neurons->total_number_of_input_stimuli;
+		if (object_index_for_single_object_presentation > -1) number_of_stimuli_to_calculate_for = input_neurons->total_number_of_transformations_per_object;
 
 	for (int neuron_group_index = 0; neuron_group_index < neurons->total_number_of_groups; neuron_group_index++) {
 
@@ -171,7 +175,12 @@ void SpikeAnalyser::calculate_various_neuron_spike_totals_and_averages(float pre
                 int running_count_of_non_silent_neurons_in_group = 0;
 
 		int tmp_max_number_of_neuron_spikes = 0;
-		for (int stimulus_index = 0; stimulus_index < input_neurons->total_number_of_input_stimuli; stimulus_index++) {
+
+		for (int temp_stimulus_index = 0; temp_stimulus_index < number_of_stimuli_to_calculate_for; temp_stimulus_index++) {
+
+			int stimulus_index = temp_stimulus_index;
+			if (object_index_for_single_object_presentation > -1) stimulus_index += object_index_for_single_object_presentation * input_neurons->total_number_of_transformations_per_object;
+
 			int tmp_max_number_of_neuron_spikes_per_stimulus = 0;
                         int total_number_of_non_silent_neurons_in_group_for_stimulus = 0;
 			number_of_spikes_per_stimulus_per_neuron_group[neuron_group_index][stimulus_index] = 0;
@@ -206,7 +215,7 @@ void SpikeAnalyser::calculate_various_neuron_spike_totals_and_averages(float pre
 		
 		max_number_of_spikes_per_neuron_group_per_second[neuron_group_index] = ((float)tmp_max_number_of_neuron_spikes)/presentation_time_per_stimulus_per_epoch;
 		
-		average_number_of_spikes_per_neuron_group_per_second[neuron_group_index] = (((float)total_number_of_spikes_per_neuron_group[neuron_group_index] / (float)number_of_neurons_in_group) / presentation_time_per_stimulus_per_epoch) / (float)input_neurons->total_number_of_input_stimuli;
+		average_number_of_spikes_per_neuron_group_per_second[neuron_group_index] = (((float)total_number_of_spikes_per_neuron_group[neuron_group_index] / (float)number_of_neurons_in_group) / presentation_time_per_stimulus_per_epoch) / number_of_stimuli_to_calculate_for;
                 average_number_of_spikes_per_neuron_group_per_second_excluding_silent_neurons[neuron_group_index] = (running_count_of_non_silent_neurons_in_group == 0) ? 0.0 : (((float)total_number_of_spikes_per_neuron_group[neuron_group_index] / (float)running_count_of_non_silent_neurons_in_group) / presentation_time_per_stimulus_per_epoch);
 		printf("-- summary -- number of spikes per neuron -- max: %f\tavg: %f\tavg_exc:%f\n", max_number_of_spikes_per_neuron_group_per_second[neuron_group_index], average_number_of_spikes_per_neuron_group_per_second[neuron_group_index], average_number_of_spikes_per_neuron_group_per_second_excluding_silent_neurons[neuron_group_index]);
 
@@ -216,7 +225,7 @@ void SpikeAnalyser::calculate_various_neuron_spike_totals_and_averages(float pre
 
 	}
 
-	average_number_of_neuron_spikes_per_second = ((float)total_number_of_neuron_spikes / (float)neurons->total_number_of_neurons) / presentation_time_per_stimulus_per_epoch / (float)input_neurons->total_number_of_input_stimuli;
+	average_number_of_neuron_spikes_per_second = ((float)total_number_of_neuron_spikes / (float)neurons->total_number_of_neurons) / presentation_time_per_stimulus_per_epoch / number_of_stimuli_to_calculate_for;
 
 	// printf("total_number_of_neuron_spikes: %d\n", total_number_of_neuron_spikes);
 	printf("* average_number_of_neuron_spikes_per_second: %f\n", average_number_of_neuron_spikes_per_second);

@@ -94,7 +94,8 @@ enum PRESENTATION_FORMAT {
 
 enum OBJECT_ORDER {
 	OBJECT_ORDER_ORIGINAL,
-	OBJECT_ORDER_RANDOM
+	OBJECT_ORDER_RANDOM,
+	OBJECT_ORDER_SINGLE_OBJECT
 };
 
 enum TRANSFORM_ORDER {
@@ -107,13 +108,15 @@ struct Stimuli_Presentation_Struct {
 	Stimuli_Presentation_Struct(): presentation_format(PRESENTATION_FORMAT_OBJECT_BY_OBJECT_RESET_BETWEEN_STIMULI), 
 								object_order(OBJECT_ORDER_ORIGINAL), 
 								transform_order(TRANSFORM_ORDER_ORIGINAL), 
-								reset_current_time_between_each_stimulus(false) 
+								reset_current_time_between_each_stimulus(false),
+								single_object_index(0)
 								{}
 
 	PRESENTATION_FORMAT presentation_format;
 	OBJECT_ORDER object_order;
 	TRANSFORM_ORDER transform_order;
 	bool reset_current_time_between_each_stimulus;
+	int single_object_index;
 
 };
 
@@ -161,6 +164,7 @@ public:
 	void CreateDirectoryForSimulationDataFiles(std::string directory_name_for_simulation_data_files);
 
 	void reset_all_recording_electrodes();
+	void reset_spike_analyser();
 
 	// void RunSimulationToCountNeuronSpikes(float presentation_time_per_stimulus_per_epoch, bool collect_spikes, bool save_collected_spikes_and_states_to_file, SpikeAnalyser *spike_analyser, bool human_readable_storage, bool isTrained);
 	// void RunSimulationToCollectEvents(float presentation_time_per_stimulus_per_epoch, bool isTrained);
@@ -169,6 +173,8 @@ public:
 
 
 protected: 
+	int number_of_input_stimuli_for_epoch;
+
 	int* setup_stimuli_presentation_order();
 
 	void perform_per_timestep_recording_electrode_instructions(float current_time_in_seconds, int timestep_index, int number_of_timesteps_per_stimulus_per_epoch, int epoch_number);

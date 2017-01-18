@@ -20,6 +20,7 @@ Simulator::Simulator(SpikingModel * spiking_model_param, Simulator_Options * sim
         context = spiking_model->context;
 
 	simulations_run_count = 0;
+	number_of_input_stimuli_for_epoch = 0;
 
 	full_directory_name_for_simulation_data_files = "output/"; // Put into struct!!
 
@@ -67,14 +68,6 @@ Simulator::Simulator(SpikingModel * spiking_model_param, Simulator_Options * sim
 		network_state_archive_recording_electrodes = nullptr;
 	}
 
-        if (count_neuron_spikes_recording_electrodes) {
-          spike_analyser = new SpikeAnalyser
-            (spiking_model->spiking_neurons,
-             spiking_model->input_spiking_neurons,
-             count_neuron_spikes_recording_electrodes);
-          spike_analyser->init_backend(spiking_model->spiking_neurons->backend()->context);
-        }
-
         #ifndef SILENCE_SIMULATOR_SETUP
 	timer->stop_timer_and_log_time_and_message("Recording electrodes setup.\n", true);
         #endif
@@ -120,6 +113,29 @@ void Simulator::reset_all_recording_electrodes() {
 		collect_input_neuron_spikes_recording_electrodes->delete_and_reset_collected_spikes();
 	}
 
+
+	
+	
+
+}
+
+
+void Simulator::reset_spike_analyser() {
+
+	if (count_neuron_spikes_recording_electrodes) {
+
+		if (spike_analyser) delete spike_analyser;
+
+		if (simulator_options->stimuli_presentation_options->object_order == OBJECT_ORDER_SINGLE_OBJECT) {
+			spike_analyser = new SpikeAnalyser(spiking_model->spiking_neurons, spiking_model->input_spiking_neurons, count_neuron_spikes_recording_electrodes, simulator_options->stimuli_presentation_options->single_object_index);
+		} else {
+			spike_analyser = new SpikeAnalyser(spiking_model->spiking_neurons, spiking_model->input_spiking_neurons, count_neuron_spikes_recording_electrodes);
+		}
+		
+          
+          spike_analyser->init_backend(spiking_model->spiking_neurons->backend()->context);
+    }
+
 }
 
 
@@ -155,11 +171,15 @@ void Simulator::RunSimulation() {
 		printf("Starting Epoch: %d\n", epoch_number);
 
 		int* stimuli_presentation_order = setup_stimuli_presentation_order();
-		for (int stimulus_index = 0; stimulus_index < spiking_model->input_spiking_neurons->total_number_of_input_stimuli; stimulus_index++) {
+		reset_spike_analyser();
+		for (int temp_stimulus_index = 0; temp_stimulus_index < number_of_input_stimuli_for_epoch; temp_stimulus_index++) {
+
+			int stimulus_index = temp_stimulus_index;
+			if (simulator_options->stimuli_presentation_options->object_order == OBJECT_ORDER_SINGLE_OBJECT) stimulus_index = temp_stimulus_index + spiking_model->input_spiking_neurons->total_number_of_transformations_per_object * simulator_options->stimuli_presentation_options->single_object_index;
 
 			// if (simulator_options->stimuli_presentation_options->reset_current_time_between_each_stimulus) current_time_in_seconds = 0.0f; // For GeneratorInputSpikingNeurons?
 
-			perform_pre_stimulus_presentation_instructions(stimuli_presentation_order[stimulus_index]);
+			perform_pre_stimulus_presentation_instructions(stimuli_presentation_order[temp_stimulus_index]);
 
 			int number_of_timesteps_per_stimulus_per_epoch = simulator_options->run_simulation_general_options->presentation_time_per_stimulus_per_epoch / spiking_model->timestep;
 
@@ -204,32 +224,51 @@ int* Simulator::setup_stimuli_presentation_order() {
 	int total_number_of_objects = spiking_model->input_spiking_neurons->total_number_of_objects;
 	int total_number_of_transformations_per_object = spiking_model->input_spiking_neurons->total_number_of_transformations_per_object;
 	
-	int* stimuli_presentation_order = (int*)malloc(total_number_of_input_stimuli*sizeof(int));
+	number_of_input_stimuli_for_epoch = total_number_of_input_stimuli;
+
+	if (simulator_options->stimuli_presentation_options->object_order == OBJECT_ORDER_SINGLE_OBJECT) {
+	
+		number_of_input_stimuli_for_epoch = total_number_of_transformations_per_object;
+		total_number_of_objects = 1;
+
+	}
+
+	int* stimuli_presentation_order = (int*)malloc(number_of_input_stimuli_for_epoch*sizeof(int));
 
 	// From InputSpikingNeurons
 	
-	for (int i = 0; i < total_number_of_input_stimuli; i++){
+	for (int i = 0; i < number_of_input_stimuli_for_epoch; i++){
 		stimuli_presentation_order[i] = i;
+
+		if (simulator_options->stimuli_presentation_options->object_order == OBJECT_ORDER_SINGLE_OBJECT) {
+			int object_start_index = total_number_of_transformations_per_object * simulator_options->stimuli_presentation_options->single_object_index;
+			stimuli_presentation_order[i] += object_start_index;
+		}
 	}
 
 	switch (simulator_options->stimuli_presentation_options->presentation_format) {
 
 		case PRESENTATION_FORMAT_RANDOM_RESET_BETWEEN_EACH_STIMULUS: case PRESENTATION_FORMAT_RANDOM_NO_RESET: {
-			std::random_shuffle(&stimuli_presentation_order[0], &stimuli_presentation_order[total_number_of_input_stimuli]);
+			std::random_shuffle(&stimuli_presentation_order[0], &stimuli_presentation_order[number_of_input_stimuli_for_epoch]);
 			break;
 		}
 
-		case PRESENTATION_FORMAT_OBJECT_BY_OBJECT_RESET_BETWEEN_OBJECTS: case PRESENTATION_FORMAT_OBJECT_BY_OBJECT_NO_RESET: {
+		case PRESENTATION_FORMAT_OBJECT_BY_OBJECT_RESET_BETWEEN_OBJECTS: case PRESENTATION_FORMAT_OBJECT_BY_OBJECT_NO_RESET: case PRESENTATION_FORMAT_OBJECT_BY_OBJECT_RESET_BETWEEN_STIMULI: {
 			
 			int* object_order_indices = (int*)malloc(total_number_of_objects * sizeof(int));
 
 			for (int object_index = 0; object_index < total_number_of_objects; object_index++) {
-				object_order_indices[object_index] = object_index;			
+
+				if (simulator_options->stimuli_presentation_options->object_order == OBJECT_ORDER_SINGLE_OBJECT) {
+					object_order_indices[object_index] = simulator_options->stimuli_presentation_options->single_object_index;
+				} else {
+					object_order_indices[object_index] = object_index;			
+				}
 			}
 
 			switch (simulator_options->stimuli_presentation_options->object_order) {
 		
-				case OBJECT_ORDER_ORIGINAL:
+				case OBJECT_ORDER_ORIGINAL: OBJECT_ORDER_SINGLE_OBJECT:
 
 					break;
 
@@ -260,6 +299,10 @@ int* Simulator::setup_stimuli_presentation_order() {
 		default:
 			break;
 	}
+
+	// for (int i = 0; i < number_of_input_stimuli_for_epoch; i++){
+	// 	printf("stimuli_presentation_order[i]: %d\n", stimuli_presentation_order[i]);
+	// }
 
 	return stimuli_presentation_order;
 }
