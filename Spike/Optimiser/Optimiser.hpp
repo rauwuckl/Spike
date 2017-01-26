@@ -29,12 +29,11 @@ struct Optimiser_Options {
 						number_of_non_input_layers_to_simulate(1),
 						index_of_neuron_group_of_interest(0),
 						initial_optimisation_parameter_min(1.0f*pow(10, -10)),
-						initial_optimisation_parameter_max(1.0*pow(10, -2)),
+						initial_optimisation_parameter_max(1.0*pow(10, -3)),
 						ideal_output_score(100.0),
 						optimisation_minimum_error(1.0),
 						positive_effect_of_postive_change_in_parameter(true),
-						score_to_use(SCORE_TO_USE_average_number_of_spikes_per_neuron_group_per_second),
-						layer_to_turn_inhibitory_neurons_on(-1)
+						score_to_use(SCORE_TO_USE_average_number_of_spikes_per_neuron_group_per_second)
 					{}
 
 	float* model_pointer_to_be_optimised;
@@ -47,7 +46,6 @@ struct Optimiser_Options {
 	float optimisation_minimum_error;
 	bool positive_effect_of_postive_change_in_parameter;
 	SCORE_TO_USE score_to_use;
-	int layer_to_turn_inhibitory_neurons_on;
 
 };
 
@@ -72,7 +70,6 @@ public:
 	float* optimisation_minimum_error_for_each_optimisation_stage = nullptr;
 	bool* positive_effect_of_postive_change_in_parameter_for_each_optimisation_stage = nullptr;
 	int* score_to_use_for_each_optimisation_stage = nullptr;
-	int* layer_to_turn_inhibitory_neurons_on_for_each_optimisation_stage = nullptr;
 
 	float* final_optimal_parameter_for_each_optimisation_stage = nullptr;
 	int* final_iteration_count_for_each_optimisation_stage = nullptr;
@@ -88,7 +85,7 @@ public:
 
 protected:
 	void setup_optimisation_stage_specific_model_parameters(int optimisation_stage);
-	void filecopy(FILE *dest, FILE *src);
+	void file_copy_and_close(FILE *dest, FILE *src);
 
 };
 

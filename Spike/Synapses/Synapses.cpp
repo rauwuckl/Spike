@@ -244,8 +244,11 @@ void Synapses::AddGroup(int presynaptic_group_id,
 
           // Used for event count
           // printf("postsynaptic_neuron_indices[i]: %d\n", postsynaptic_neuron_indices[i]);
-          synapse_postsynaptic_neuron_count_index[postsynaptic_neuron_indices[i]] = neurons->per_neuron_afferent_synapse_count[postsynaptic_neuron_indices[i]];
-          neurons->per_neuron_afferent_synapse_count[postsynaptic_neuron_indices[i]] ++;
+          int postsynaptic_neuron_index = postsynaptic_neuron_indices[i];
+          if (postsynaptic_neuron_index > -1) {
+            synapse_postsynaptic_neuron_count_index[postsynaptic_neuron_index] = neurons->per_neuron_afferent_synapse_count[postsynaptic_neuron_indices[i]];
+            neurons->per_neuron_afferent_synapse_count[postsynaptic_neuron_index] ++;
+          }
 
 	}
 
@@ -255,25 +258,11 @@ void Synapses::increment_number_of_synapses(int increment) {
 
   total_number_of_synapses += increment;
 
-  if (total_number_of_synapses - increment == 0) {
-          presynaptic_neuron_indices = (int*)malloc(total_number_of_synapses * sizeof(int));
-          postsynaptic_neuron_indices = (int*)malloc(total_number_of_synapses * sizeof(int));
-          synaptic_efficacies_or_weights = (float*)malloc(total_number_of_synapses * sizeof(float));
-          original_synapse_indices = (int*)malloc(total_number_of_synapses * sizeof(int));
-          synapse_postsynaptic_neuron_count_index = (int*)malloc(total_number_of_synapses * sizeof(int));
-  } else {
-    int* temp_presynaptic_neuron_indices = (int*)realloc(presynaptic_neuron_indices, total_number_of_synapses * sizeof(int));
-    int* temp_postsynaptic_neuron_indices = (int*)realloc(postsynaptic_neuron_indices, total_number_of_synapses * sizeof(int));
-    float* temp_synaptic_efficacies_or_weights = (float*)realloc(synaptic_efficacies_or_weights, total_number_of_synapses * sizeof(float));
-    int* temp_original_synapse_indices = (int*)realloc(original_synapse_indices, total_number_of_synapses * sizeof(int));
-    int* temp_synapse_postsynaptic_neuron_count_index = (int*)realloc(synapse_postsynaptic_neuron_count_index, total_number_of_synapses * sizeof(int));
-
-    if (temp_presynaptic_neuron_indices != nullptr) presynaptic_neuron_indices = temp_presynaptic_neuron_indices;
-    if (temp_postsynaptic_neuron_indices != nullptr) postsynaptic_neuron_indices = temp_postsynaptic_neuron_indices;
-    if (temp_synaptic_efficacies_or_weights != nullptr) synaptic_efficacies_or_weights = temp_synaptic_efficacies_or_weights;
-    if (temp_original_synapse_indices != nullptr) original_synapse_indices = temp_original_synapse_indices;
-    if (temp_synapse_postsynaptic_neuron_count_index != nullptr) synapse_postsynaptic_neuron_count_index = temp_synapse_postsynaptic_neuron_count_index;
-  }
+  presynaptic_neuron_indices = (int*)realloc(presynaptic_neuron_indices, total_number_of_synapses * sizeof(int));
+  postsynaptic_neuron_indices = (int*)realloc(postsynaptic_neuron_indices, total_number_of_synapses * sizeof(int));
+  synaptic_efficacies_or_weights = (float*)realloc(synaptic_efficacies_or_weights, total_number_of_synapses * sizeof(float));
+  original_synapse_indices = (int*)realloc(original_synapse_indices, total_number_of_synapses * sizeof(int));
+  synapse_postsynaptic_neuron_count_index = (int*)realloc(synapse_postsynaptic_neuron_count_index, total_number_of_synapses * sizeof(int));
 
 }
 

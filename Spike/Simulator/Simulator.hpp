@@ -50,7 +50,9 @@ struct Simulator_Run_Simulation_General_Options {
 												reset_current_time_between_each_epoch(false),
 												delete_spike_analyser_on_simulator_destruction(true),
 												specific_epoch_to_pass_to_spike_analyser(0),
-												reset_model_state_between_epochs(true)
+												reset_model_state_between_epochs(true),
+												reset_model_state_at_start(true),
+												apply_stdp_start_index_if_on(0)
 												{}
 
 
@@ -63,6 +65,8 @@ struct Simulator_Run_Simulation_General_Options {
 	bool delete_spike_analyser_on_simulator_destruction;
 	int specific_epoch_to_pass_to_spike_analyser;
 	bool reset_model_state_between_epochs;
+	bool reset_model_state_at_start;
+	int apply_stdp_start_index_if_on;
 
 };
 
@@ -89,7 +93,8 @@ enum PRESENTATION_FORMAT {
 		PRESENTATION_FORMAT_OBJECT_BY_OBJECT_RESET_BETWEEN_OBJECTS,
 		PRESENTATION_FORMAT_OBJECT_BY_OBJECT_NO_RESET,
 		PRESENTATION_FORMAT_RANDOM_RESET_BETWEEN_EACH_STIMULUS,
-		PRESENTATION_FORMAT_RANDOM_NO_RESET
+		PRESENTATION_FORMAT_RANDOM_NO_RESET,
+		PRESENTATION_FORMAT_INTERLEAVED_OBJECTS
 	};
 
 enum OBJECT_ORDER {

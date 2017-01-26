@@ -258,6 +258,7 @@ void ImagePoissonInputSpikingNeurons::load_rates_from_files(const char * inputDi
 								
                 float rate;
                 gaborStream >> rate;
+                // printf("rate: %f\n", rate);
 
                 // printf("rate: %f\n", rate);
                 if (rate < 0.000001) zero_count++;

@@ -188,6 +188,13 @@ namespace Backend {
           if (presynaptic_x_set && presynaptic_y_set) {
             d_presynaptic_neuron_indices[idx] = CORRECTED_PRESYNAPTIC_ID(prestart + presynaptic_x + presynaptic_y*pre_width, presynaptic_group_is_input);
             break;
+          } 
+          else {
+            // TEMP
+            d_presynaptic_neuron_indices[idx] = -1;
+            d_postsynaptic_neuron_indices[idx] = -1;
+            break;
+
           }
 			
 

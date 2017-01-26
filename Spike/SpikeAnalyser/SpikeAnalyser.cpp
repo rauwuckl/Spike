@@ -15,8 +15,8 @@ SpikeAnalyser::SpikeAnalyser(SpikingNeurons *neurons_parameter,
 	neurons = neurons_parameter;
 	input_neurons = input_neurons_parameter;
         count_electrodes = electrodes_parameter;
-        assert(count_electrodes != nullptr &&
-               "You need to have some electrodes!");
+        // assert(count_electrodes != nullptr &&
+        //        "You need to have some electrodes!");
     object_index_for_single_object_presentation = object_index_for_single_object_presentation_parameter;
 
 //	number_of_neurons_in_single_cell_analysis_group = 0;

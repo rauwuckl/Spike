@@ -163,12 +163,20 @@ void Simulator::RunSimulation() {
 
 	for (int epoch_number = 0; epoch_number < simulator_options->run_simulation_general_options->number_of_epochs; epoch_number++) {
 
-
-		if (epoch_number == 0 || simulator_options->run_simulation_general_options->reset_model_state_between_epochs) spiking_model->reset_state();
+		if ((simulator_options->run_simulation_general_options->reset_model_state_at_start && epoch_number == 0) || simulator_options->run_simulation_general_options->reset_model_state_between_epochs) {
+			spiking_model->reset_state();
+		}
 		if (epoch_number == 0 || simulator_options->run_simulation_general_options->reset_current_time_between_each_epoch) current_time_in_seconds = 0.0f;
 
 		TimerWithMessages * epoch_timer = new TimerWithMessages();
 		printf("Starting Epoch: %d\n", epoch_number);
+
+
+		bool stdp_on = false;
+		if (epoch_number >= simulator_options->run_simulation_general_options->apply_stdp_start_index_if_on && simulator_options->run_simulation_general_options->apply_stdp_to_relevant_synapses == true) {
+			stdp_on = true;
+			simulator_options->run_simulation_general_options->presentation_time_per_stimulus_per_epoch = 0.01;
+		}
 
 		int* stimuli_presentation_order = setup_stimuli_presentation_order();
 		reset_spike_analyser();
@@ -184,7 +192,10 @@ void Simulator::RunSimulation() {
 			int number_of_timesteps_per_stimulus_per_epoch = simulator_options->run_simulation_general_options->presentation_time_per_stimulus_per_epoch / spiking_model->timestep;
 
 			for (int timestep_index = 0; timestep_index < number_of_timesteps_per_stimulus_per_epoch; timestep_index++){
-				spiking_model->perform_per_timestep_model_instructions(current_time_in_seconds, simulator_options->run_simulation_general_options->apply_stdp_to_relevant_synapses);
+
+				
+
+				spiking_model->perform_per_timestep_model_instructions(current_time_in_seconds, stdp_on);
 
 				perform_per_timestep_recording_electrode_instructions(current_time_in_seconds, timestep_index, number_of_timesteps_per_stimulus_per_epoch, epoch_number);
 
@@ -295,6 +306,23 @@ int* Simulator::setup_stimuli_presentation_order() {
 			break;
 
 		}
+
+		case PRESENTATION_FORMAT_INTERLEAVED_OBJECTS: {
+
+			for (int transform_index = 0; transform_index < total_number_of_transformations_per_object; transform_index++) {
+				for (int object_index = 0; object_index < total_number_of_objects; object_index++) {
+					int index = transform_index * total_number_of_objects + object_index;
+					int stimulus = object_index * total_number_of_transformations_per_object + transform_index;
+
+					// printf("index: %d, stimulus: %d\n", index, stimulus);
+
+					stimuli_presentation_order[index] = stimulus;
+				}
+			}
+			break;
+
+		}
+
 
 		default:
 			break;
