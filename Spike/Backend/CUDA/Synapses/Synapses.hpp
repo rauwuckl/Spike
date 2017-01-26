@@ -42,7 +42,7 @@ namespace Backend {
 
       void set_neuron_indices_by_sampling_from_normal_distribution
       (int original_number_of_synapses,
-       int total_number_of_new_synapses,
+       int max_number_of_new_synapses,
        int postsynaptic_group_id,
        int poststart, int prestart,
        int* postsynaptic_group_shape,
@@ -71,7 +71,7 @@ namespace Backend {
                                                                                    int * d_postsynaptic_neuron_indices);
 
     __global__ void set_neuron_indices_by_sampling_from_normal_distribution_kernel
-    (int total_number_of_new_synapses, 
+    (int max_number_of_new_synapses, 
      int postsynaptic_group_id, 
      int poststart, 
      int prestart, 
@@ -86,6 +86,7 @@ namespace Backend {
      float * d_synaptic_efficacies_or_weights, 
      float standard_deviation_sigma, 
      bool presynaptic_group_is_input,
-     curandState_t* d_states);
+     curandState_t* d_states,
+     int * number_of_new_synapses_added);
   }
 }

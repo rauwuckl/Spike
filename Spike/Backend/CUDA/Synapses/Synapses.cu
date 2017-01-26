@@ -86,7 +86,7 @@ namespace Backend {
 
     void Synapses::set_neuron_indices_by_sampling_from_normal_distribution
     (int original_number_of_synapses,
-     int total_number_of_new_synapses,
+     int max_number_of_new_synapses,
      int postsynaptic_group_id,
      int poststart, int prestart,
      int* postsynaptic_group_shape,
@@ -96,15 +96,22 @@ namespace Backend {
      float standard_deviation_sigma,
      bool presynaptic_group_is_input) {
 
-      if (total_number_of_new_synapses > frontend()->largest_synapse_group_size || !temp_presynaptic_neuron_indices) {
+      if (max_number_of_new_synapses > frontend()->largest_synapse_group_size || !temp_presynaptic_neuron_indices) {
         CudaSafeCall(cudaMalloc((void **)&temp_presynaptic_neuron_indices,
-                                sizeof(int)*total_number_of_new_synapses));
+                                sizeof(int)*max_number_of_new_synapses));
         CudaSafeCall(cudaMalloc((void **)&temp_postsynaptic_neuron_indices,
-                                sizeof(int)*total_number_of_new_synapses));
+                                sizeof(int)*max_number_of_new_synapses));
       }
 
+      int * number_of_new_synapses_added_pointer = (int *)malloc(1*sizeof(int));;
+      int * d_number_of_new_synapses_added;
+      CudaSafeCall(cudaMalloc((void **)&d_number_of_new_synapses_added, sizeof(int)));
+      CudaSafeCall(cudaMemset(&(d_number_of_new_synapses_added[0]), 0, sizeof(int)));
+      
+      // int * pointer = *number_of_new_synapses_added;
+
       set_neuron_indices_by_sampling_from_normal_distribution_kernel<<<random_state_manager_backend->block_dimensions, random_state_manager_backend->threads_per_block>>>
-        (total_number_of_new_synapses,
+        (max_number_of_new_synapses,
          postsynaptic_group_id,
          poststart, prestart,
          postsynaptic_group_shape[0],
@@ -118,15 +125,26 @@ namespace Backend {
          temp_synaptic_efficacies_or_weights,
          standard_deviation_sigma,
          presynaptic_group_is_input,
-         random_state_manager_backend->states);
+         random_state_manager_backend->states,
+         d_number_of_new_synapses_added);
       CudaCheckError();
 
-      CudaSafeCall(cudaMemcpy(&(frontend()->presynaptic_neuron_indices)[original_number_of_synapses], temp_presynaptic_neuron_indices, sizeof(int)*total_number_of_new_synapses, cudaMemcpyDeviceToHost));
-      CudaSafeCall(cudaMemcpy(&(frontend()->postsynaptic_neuron_indices)[original_number_of_synapses], temp_postsynaptic_neuron_indices, sizeof(int)*total_number_of_new_synapses, cudaMemcpyDeviceToHost));
+      CudaSafeCall(cudaMemcpy(&number_of_new_synapses_added_pointer[0], &d_number_of_new_synapses_added[0], (sizeof(int)), cudaMemcpyDeviceToHost));
+
+      int number_of_new_synapses_added = number_of_new_synapses_added_pointer[0];
+
+      frontend()->increment_number_of_synapses(number_of_new_synapses_added);
+
+      if (number_of_new_synapses_added > frontend()->largest_synapse_group_size) {
+        frontend()->largest_synapse_group_size = number_of_new_synapses_added;
+      }
+
+      CudaSafeCall(cudaMemcpy(&(frontend()->presynaptic_neuron_indices)[original_number_of_synapses], temp_presynaptic_neuron_indices, sizeof(int)*number_of_new_synapses_added, cudaMemcpyDeviceToHost));
+      CudaSafeCall(cudaMemcpy(&(frontend()->postsynaptic_neuron_indices)[original_number_of_synapses], temp_postsynaptic_neuron_indices, sizeof(int)*number_of_new_synapses_added, cudaMemcpyDeviceToHost));
     }
     
     __global__ void set_neuron_indices_by_sampling_from_normal_distribution_kernel
-    (int total_number_of_new_synapses,
+    (int max_number_of_new_synapses,
      int postsynaptic_group_id,
      int poststart, int prestart,
      int post_width, int post_height,
@@ -138,14 +156,15 @@ namespace Backend {
      float * d_synaptic_efficacies_or_weights,
      float standard_deviation_sigma,
      bool presynaptic_group_is_input,
-     curandState_t* d_states) {
+     curandState_t* d_states,
+     int * number_of_new_synapses_added) {
 
       int idx = threadIdx.x + blockIdx.x * blockDim.x;
       int t_idx = idx;
-      while (idx < total_number_of_new_synapses) {
+      while (idx < max_number_of_new_synapses) {
 		
         int postsynaptic_neuron_id = idx / number_of_new_synapses_per_postsynaptic_neuron;
-        d_postsynaptic_neuron_indices[idx] = poststart + postsynaptic_neuron_id;
+        
 
         int postsynaptic_x = postsynaptic_neuron_id % post_width; 
         int postsynaptic_y = floor((float)(postsynaptic_neuron_id) / post_width);
@@ -186,13 +205,15 @@ namespace Backend {
           }
 
           if (presynaptic_x_set && presynaptic_y_set) {
-            d_presynaptic_neuron_indices[idx] = CORRECTED_PRESYNAPTIC_ID(prestart + presynaptic_x + presynaptic_y*pre_width, presynaptic_group_is_input);
+            int i = atomicAdd(&number_of_new_synapses_added[0], 1);
+            d_presynaptic_neuron_indices[i] = CORRECTED_PRESYNAPTIC_ID(prestart + presynaptic_x + presynaptic_y*pre_width, presynaptic_group_is_input);
+            d_postsynaptic_neuron_indices[i] = poststart + postsynaptic_neuron_id;
             break;
           } 
           else {
-            // TEMP
-            d_presynaptic_neuron_indices[idx] = -1;
-            d_postsynaptic_neuron_indices[idx] = -1;
+            // // TEMP
+            // d_presynaptic_neuron_indices[idx] = -1;
+            // d_postsynaptic_neuron_indices[idx] = -1;
             break;
 
           }
