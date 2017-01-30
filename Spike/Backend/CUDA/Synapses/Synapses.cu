@@ -94,7 +94,8 @@ namespace Backend {
      int number_of_new_synapses_per_postsynaptic_neuron,
      int number_of_postsynaptic_neurons_in_group,
      float standard_deviation_sigma,
-     bool presynaptic_group_is_input) {
+     bool presynaptic_group_is_input,
+     int imaginary_pre_boarder_size) {
 
       if (max_number_of_new_synapses > frontend()->largest_synapse_group_size || !temp_presynaptic_neuron_indices) {
         CudaSafeCall(cudaMalloc((void **)&temp_presynaptic_neuron_indices,
@@ -126,7 +127,8 @@ namespace Backend {
          standard_deviation_sigma,
          presynaptic_group_is_input,
          random_state_manager_backend->states,
-         d_number_of_new_synapses_added);
+         d_number_of_new_synapses_added,
+         imaginary_pre_boarder_size);
       CudaCheckError();
 
       CudaSafeCall(cudaMemcpy(&number_of_new_synapses_added_pointer[0], &d_number_of_new_synapses_added[0], (sizeof(int)), cudaMemcpyDeviceToHost));
@@ -157,7 +159,8 @@ namespace Backend {
      float standard_deviation_sigma,
      bool presynaptic_group_is_input,
      curandState_t* d_states,
-     int * number_of_new_synapses_added) {
+     int * number_of_new_synapses_added,
+     int imaginary_pre_boarder_size) {
 
       int idx = threadIdx.x + blockIdx.x * blockDim.x;
       int t_idx = idx;
@@ -171,8 +174,8 @@ namespace Backend {
         float fractional_x = (float)postsynaptic_x / post_width;
         float fractional_y = (float)postsynaptic_y / post_height;
 
-        int corresponding_presynaptic_centre_x = floor((float)pre_width * fractional_x); 
-        int corresponding_presynaptic_centre_y = floor((float)pre_height * fractional_y);
+        int corresponding_presynaptic_centre_x = floor((float)(pre_width + imaginary_pre_boarder_size * 2) * fractional_x); 
+        int corresponding_presynaptic_centre_y = floor((float)(pre_height + imaginary_pre_boarder_size * 2) * fractional_y);
 
         bool presynaptic_x_set = false;
         bool presynaptic_y_set = false;
@@ -186,7 +189,7 @@ namespace Backend {
             float scaled_value_from_normal_distribution_for_x = standard_deviation_sigma * value_from_normal_distribution_for_x;
             int rounded_scaled_value_from_normal_distribution_for_x = round(scaled_value_from_normal_distribution_for_x);
             presynaptic_x = corresponding_presynaptic_centre_x + rounded_scaled_value_from_normal_distribution_for_x;
-            if ((presynaptic_x > -1) && (presynaptic_x < pre_width)) {
+            if ((presynaptic_x > -1 + imaginary_pre_boarder_size) && (presynaptic_x < pre_width + imaginary_pre_boarder_size)) {
               presynaptic_x_set = true;
             }
 
@@ -198,7 +201,7 @@ namespace Backend {
             float scaled_value_from_normal_distribution_for_y = standard_deviation_sigma * value_from_normal_distribution_for_y;
             int rounded_scaled_value_from_normal_distribution_for_y = round(scaled_value_from_normal_distribution_for_y);
             presynaptic_y = corresponding_presynaptic_centre_y + rounded_scaled_value_from_normal_distribution_for_y;
-            if ((presynaptic_y > -1) && (presynaptic_y < pre_height)) {
+            if ((presynaptic_y > -1 + imaginary_pre_boarder_size) && (presynaptic_y < pre_height + imaginary_pre_boarder_size)) {
               presynaptic_y_set = true;
             }
 
@@ -206,14 +209,11 @@ namespace Backend {
 
           if (presynaptic_x_set && presynaptic_y_set) {
             int i = atomicAdd(&number_of_new_synapses_added[0], 1);
-            d_presynaptic_neuron_indices[i] = CORRECTED_PRESYNAPTIC_ID(prestart + presynaptic_x + presynaptic_y*pre_width, presynaptic_group_is_input);
+            d_presynaptic_neuron_indices[i] = CORRECTED_PRESYNAPTIC_ID(prestart + (presynaptic_x - imaginary_pre_boarder_size) + (presynaptic_y - imaginary_pre_boarder_size)*pre_width, presynaptic_group_is_input);
             d_postsynaptic_neuron_indices[i] = poststart + postsynaptic_neuron_id;
             break;
           } 
           else {
-            // // TEMP
-            // d_presynaptic_neuron_indices[idx] = -1;
-            // d_postsynaptic_neuron_indices[idx] = -1;
             break;
 
           }

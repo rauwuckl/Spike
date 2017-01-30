@@ -18,7 +18,8 @@ namespace Backend {
        int number_of_new_synapses_per_postsynaptic_neuron,
        int number_of_postsynaptic_neurons_in_group,
        float standard_deviation_sigma,
-       bool presynaptic_group_is_input) final {
+       bool presynaptic_group_is_input,
+       int imaginary_pre_boarder_size) final {
       }
 
       void prepare() override {

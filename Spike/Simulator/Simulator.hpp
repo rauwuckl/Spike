@@ -105,7 +105,8 @@ enum OBJECT_ORDER {
 
 enum TRANSFORM_ORDER {
 	TRANSFORM_ORDER_ORIGINAL,
-	TRANSFORM_ORDER_RANDOM
+	TRANSFORM_ORDER_RANDOM,
+	TRANSFORM_ORDER_SINGLE_OBJECT
 };
 
 struct Stimuli_Presentation_Struct {
@@ -114,7 +115,8 @@ struct Stimuli_Presentation_Struct {
 								object_order(OBJECT_ORDER_ORIGINAL), 
 								transform_order(TRANSFORM_ORDER_ORIGINAL), 
 								reset_current_time_between_each_stimulus(false),
-								single_object_index(0)
+								single_object_index(0),
+								single_transform_index(0)
 								{}
 
 	PRESENTATION_FORMAT presentation_format;
@@ -122,6 +124,7 @@ struct Stimuli_Presentation_Struct {
 	TRANSFORM_ORDER transform_order;
 	bool reset_current_time_between_each_stimulus;
 	int single_object_index;
+	int single_transform_index;
 
 };
 

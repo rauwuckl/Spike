@@ -38,7 +38,8 @@ public:
   SpikeAnalyser(SpikingNeurons *neurons_parameter,
                 InputSpikingNeurons *input_neurons_parameter,
                 CountNeuronSpikesRecordingElectrodes *electrodes_parameter,
-                int object_index_for_single_object_presentation = -1);
+                int object_index_for_single_object_presentation_parameter = -1,
+                int transform_index_for_single_transform_presentation_parameter = -1);
 
   SpikingNeurons *neurons  = nullptr;
   InputSpikingNeurons *input_neurons = nullptr;
@@ -52,6 +53,7 @@ public:
 
   int ** per_stimulus_per_neuron_spike_counts = nullptr;
   int object_index_for_single_object_presentation;
+  int transform_index_for_single_transform_presentation;
 
   float maximum_possible_information_score;
   float optimal_average_firing_rate;

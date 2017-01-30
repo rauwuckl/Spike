@@ -42,7 +42,8 @@ namespace Backend {
      int number_of_new_synapses_per_postsynaptic_neuron,
      int number_of_postsynaptic_neurons_in_group,
      float standard_deviation_sigma,
-     bool presynaptic_group_is_input) = 0;
+     bool presynaptic_group_is_input,
+     int imaginary_pre_boarder_size) = 0;
   };
 }
 
@@ -67,6 +68,7 @@ struct synapse_parameters_struct {
   float weight_range_top = 1.0;
   float random_connectivity_probability;
   int connectivity_type = CONNECTIVITY_TYPE_ALL_TO_ALL;
+  int imaginary_pre_boarder_size = 0;
 };
 
 

@@ -11,13 +11,15 @@
 SpikeAnalyser::SpikeAnalyser(SpikingNeurons *neurons_parameter,
                              InputSpikingNeurons *input_neurons_parameter,
                              CountNeuronSpikesRecordingElectrodes *electrodes_parameter,
-                             int object_index_for_single_object_presentation_parameter) {
+                             int object_index_for_single_object_presentation_parameter,
+                             int transform_index_for_single_transform_presentation_parameter) {
 	neurons = neurons_parameter;
 	input_neurons = input_neurons_parameter;
         count_electrodes = electrodes_parameter;
         // assert(count_electrodes != nullptr &&
         //        "You need to have some electrodes!");
     object_index_for_single_object_presentation = object_index_for_single_object_presentation_parameter;
+    transform_index_for_single_transform_presentation = transform_index_for_single_transform_presentation_parameter;
 
 //	number_of_neurons_in_single_cell_analysis_group = 0;
 
@@ -158,6 +160,10 @@ void SpikeAnalyser::calculate_various_neuron_spike_totals_and_averages(float pre
 	
 	int number_of_stimuli_to_calculate_for = input_neurons->total_number_of_input_stimuli;
 		if (object_index_for_single_object_presentation > -1) number_of_stimuli_to_calculate_for = input_neurons->total_number_of_transformations_per_object;
+		if (transform_index_for_single_transform_presentation > -1) {
+			printf("hey\n");
+			number_of_stimuli_to_calculate_for = 1;
+		}
 
 	for (int neuron_group_index = 0; neuron_group_index < neurons->total_number_of_groups; neuron_group_index++) {
 
@@ -176,10 +182,13 @@ void SpikeAnalyser::calculate_various_neuron_spike_totals_and_averages(float pre
 
 		int tmp_max_number_of_neuron_spikes = 0;
 
+		printf("number_of_stimuli_to_calculate_for: %d\n", number_of_stimuli_to_calculate_for);
+
 		for (int temp_stimulus_index = 0; temp_stimulus_index < number_of_stimuli_to_calculate_for; temp_stimulus_index++) {
 
 			int stimulus_index = temp_stimulus_index;
 			if (object_index_for_single_object_presentation > -1) stimulus_index += object_index_for_single_object_presentation * input_neurons->total_number_of_transformations_per_object;
+			if (transform_index_for_single_transform_presentation > -1) stimulus_index = object_index_for_single_object_presentation * input_neurons->total_number_of_transformations_per_object + transform_index_for_single_transform_presentation;
 
 			int tmp_max_number_of_neuron_spikes_per_stimulus = 0;
                         int total_number_of_non_silent_neurons_in_group_for_stimulus = 0;

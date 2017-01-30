@@ -197,7 +197,8 @@ void Synapses::AddGroup(int presynaptic_group_id,
                number_of_new_synapses_per_postsynaptic_neuron,
                number_of_postsynaptic_neurons_in_group,
                standard_deviation_sigma,
-               presynaptic_group_is_input);
+               presynaptic_group_is_input,
+               synapse_params->imaginary_pre_boarder_size);
 
             break;
           }

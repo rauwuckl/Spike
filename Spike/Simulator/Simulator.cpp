@@ -127,7 +127,11 @@ void Simulator::reset_spike_analyser() {
 		if (spike_analyser) delete spike_analyser;
 
 		if (simulator_options->stimuli_presentation_options->object_order == OBJECT_ORDER_SINGLE_OBJECT) {
-			spike_analyser = new SpikeAnalyser(spiking_model->spiking_neurons, spiking_model->input_spiking_neurons, count_neuron_spikes_recording_electrodes, simulator_options->stimuli_presentation_options->single_object_index);
+			if (simulator_options->stimuli_presentation_options->transform_order == TRANSFORM_ORDER_SINGLE_OBJECT) {
+				spike_analyser = new SpikeAnalyser(spiking_model->spiking_neurons, spiking_model->input_spiking_neurons, count_neuron_spikes_recording_electrodes, simulator_options->stimuli_presentation_options->single_object_index, simulator_options->stimuli_presentation_options->single_transform_index);
+			} else {
+				spike_analyser = new SpikeAnalyser(spiking_model->spiking_neurons, spiking_model->input_spiking_neurons, count_neuron_spikes_recording_electrodes, simulator_options->stimuli_presentation_options->single_object_index);
+			}
 		} else {
 			spike_analyser = new SpikeAnalyser(spiking_model->spiking_neurons, spiking_model->input_spiking_neurons, count_neuron_spikes_recording_electrodes);
 		}
@@ -175,8 +179,9 @@ void Simulator::RunSimulation() {
 		bool stdp_on = false;
 		if (epoch_number >= simulator_options->run_simulation_general_options->apply_stdp_start_index_if_on && simulator_options->run_simulation_general_options->apply_stdp_to_relevant_synapses == true) {
 			stdp_on = true;
-			simulator_options->run_simulation_general_options->presentation_time_per_stimulus_per_epoch = 0.01;
+			// simulator_options->run_simulation_general_options->presentation_time_per_stimulus_per_epoch = 0.01;
 		}
+		if (stdp_on == true) printf("stdp_on\n");
 
 		int* stimuli_presentation_order = setup_stimuli_presentation_order();
 		reset_spike_analyser();
@@ -236,6 +241,14 @@ int* Simulator::setup_stimuli_presentation_order() {
 	int total_number_of_transformations_per_object = spiking_model->input_spiking_neurons->total_number_of_transformations_per_object;
 	
 	number_of_input_stimuli_for_epoch = total_number_of_input_stimuli;
+
+	if (simulator_options->stimuli_presentation_options->transform_order == TRANSFORM_ORDER_SINGLE_OBJECT) {
+		number_of_input_stimuli_for_epoch = 1;
+		int* stimuli_presentation_order = (int*)malloc(number_of_input_stimuli_for_epoch*sizeof(int));
+		// printf("simulator_options->stimuli_presentation_options->single_transform_index: %d\n", simulator_options->stimuli_presentation_options->single_transform_index);
+		stimuli_presentation_order[0] = simulator_options->stimuli_presentation_options->single_object_index * total_number_of_transformations_per_object + simulator_options->stimuli_presentation_options->single_transform_index;
+		return stimuli_presentation_order;
+	}
 
 	if (simulator_options->stimuli_presentation_options->object_order == OBJECT_ORDER_SINGLE_OBJECT) {
 	
