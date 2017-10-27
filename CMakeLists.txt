@@ -45,7 +45,7 @@ option(BUILD_DOXYGEN_DOCS
 
 option(BUILD_TESTING
   "Enable CTest tests"
-  ON)
+  OFF)
 
 option(BUILD_SHARED_LIBS
   "Build shared libSpike (else static)"

@@ -17,14 +17,14 @@
 
 struct Simulator_Recording_Electrodes_To_Use_Struct {
 
-	Simulator_Recording_Electrodes_To_Use_Struct(): count_neuron_spikes_recording_electrodes_bool(false), 
-													count_input_neuron_spikes_recording_electrodes_bool(false), 
-													collect_neuron_spikes_recording_electrodes_bool(false), 
-													collect_input_neuron_spikes_recording_electrodes_bool(false), 
-													network_state_archive_recording_electrodes_bool(false), 
+	Simulator_Recording_Electrodes_To_Use_Struct(): count_neuron_spikes_recording_electrodes_bool(false),
+													count_input_neuron_spikes_recording_electrodes_bool(false),
+													collect_neuron_spikes_recording_electrodes_bool(false),
+													collect_input_neuron_spikes_recording_electrodes_bool(false),
+													network_state_archive_recording_electrodes_bool(false),
 													collect_neuron_spikes_optional_parameters(new Collect_Neuron_Spikes_Optional_Parameters()),
 													collect_input_neuron_spikes_optional_parameters(new Collect_Neuron_Spikes_Optional_Parameters()),
-													network_state_archive_optional_parameters(new Network_State_Archive_Optional_Parameters()) 
+													network_state_archive_optional_parameters(new Network_State_Archive_Optional_Parameters())
 													{}
 
 	bool count_neuron_spikes_recording_electrodes_bool;
@@ -42,8 +42,8 @@ struct Simulator_Recording_Electrodes_To_Use_Struct {
 
 struct Simulator_Run_Simulation_General_Options {
 
-	Simulator_Run_Simulation_General_Options(): presentation_time_per_stimulus_per_epoch(0.1), 
-												number_of_epochs(1), 
+	Simulator_Run_Simulation_General_Options(): presentation_time_per_stimulus_per_epoch(0.1),
+												number_of_epochs(1),
 												apply_plasticity_to_relevant_synapses(false),
 												stimulus_presentation_order_seed(1),
 												reset_current_time_between_each_epoch(false),
@@ -53,7 +53,7 @@ struct Simulator_Run_Simulation_General_Options {
 												{}
 
 
-	float presentation_time_per_stimulus_per_epoch; 
+	float presentation_time_per_stimulus_per_epoch;
 	int number_of_epochs;
 	bool apply_plasticity_to_relevant_synapses;
 	int stimulus_presentation_order_seed;
@@ -67,10 +67,10 @@ struct Simulator_Run_Simulation_General_Options {
 
 struct Simulator_File_Storage_Options_Struct {
 
-	Simulator_File_Storage_Options_Struct(): save_recorded_neuron_spikes_to_file(false), 
-											save_recorded_input_neuron_spikes_to_file(false), 
-											write_initial_synaptic_weights_to_file_bool(false), 
-											human_readable_storage(false), 
+	Simulator_File_Storage_Options_Struct(): save_recorded_neuron_spikes_to_file(false),
+											save_recorded_input_neuron_spikes_to_file(false),
+											write_initial_synaptic_weights_to_file_bool(false),
+											human_readable_storage(false),
 											network_is_trained(false),
 											output_directory("output/")
 											{}
@@ -103,10 +103,10 @@ enum TRANSFORM_ORDER {
 
 struct Stimuli_Presentation_Struct {
 
-	Stimuli_Presentation_Struct(): presentation_format(PRESENTATION_FORMAT_OBJECT_BY_OBJECT_RESET_BETWEEN_STIMULI), 
-								object_order(OBJECT_ORDER_ORIGINAL), 
-								transform_order(TRANSFORM_ORDER_ORIGINAL), 
-								reset_current_time_between_each_stimulus(false), 
+	Stimuli_Presentation_Struct(): presentation_format(PRESENTATION_FORMAT_OBJECT_BY_OBJECT_RESET_BETWEEN_STIMULI),
+								object_order(OBJECT_ORDER_ORIGINAL),
+								transform_order(TRANSFORM_ORDER_ORIGINAL),
+								reset_current_time_between_each_stimulus(false),
 								reset_model_state_between_each_stimulus(false)
 								{}
 
@@ -120,8 +120,8 @@ struct Stimuli_Presentation_Struct {
 
 
 struct Simulator_Options {
-	Simulator_Options(): run_simulation_general_options(new Simulator_Run_Simulation_General_Options()), 
-						recording_electrodes_options(new Simulator_Recording_Electrodes_To_Use_Struct()), 
+	Simulator_Options(): run_simulation_general_options(new Simulator_Run_Simulation_General_Options()),
+						recording_electrodes_options(new Simulator_Recording_Electrodes_To_Use_Struct()),
 						file_storage_options(new Simulator_File_Storage_Options_Struct()),
 						stimuli_presentation_options(new Stimuli_Presentation_Struct())
 						{}
@@ -156,10 +156,10 @@ public:
 	CollectNeuronSpikesRecordingElectrodes* collect_neuron_spikes_recording_electrodes = nullptr;
 	CollectNeuronSpikesRecordingElectrodes* collect_input_neuron_spikes_recording_electrodes = nullptr;
 	NetworkStateArchiveRecordingElectrodes* network_state_archive_recording_electrodes = nullptr;
-	
+
 	// Functions
 
-	static void CreateDirectoryForSimulationDataFiles(std::string directory_name_for_simulation_data_files);
+	static void CreateDirectoryForSimulationDataFiles(std::string directory_name_for_simulation_data_files, std::string output_folder_path = "output/");
 
 	void reset_all_recording_electrodes();
 
@@ -169,7 +169,7 @@ public:
 	void RunSimulation();
 
 
-protected: 
+protected:
 	int* setup_stimuli_presentation_order();
 
 	void perform_per_timestep_recording_electrode_instructions(float current_time_in_seconds, int timestep_index, int number_of_timesteps_per_stimulus_per_epoch, int epoch_number);

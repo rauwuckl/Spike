@@ -99,10 +99,10 @@ Simulator::~Simulator(){
 
 }
 
-void Simulator::CreateDirectoryForSimulationDataFiles(string directory_name_for_simulation_data_files) {
-	mkdir(("output/"),S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);
-	if (mkdir(("output/"+directory_name_for_simulation_data_files).c_str(),S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH)==0)
-		printf("\nDirectory created\n");
+void Simulator::CreateDirectoryForSimulationDataFiles(string directory_name_for_simulation_data_files, string output_folder_path) {
+	mkdir((output_folder_path.c_str()),S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);
+	if (mkdir((output_folder_path.c_str() + directory_name_for_simulation_data_files).c_str(),S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH)==0)
+		printf("\nDirectory created: %s/%s \n", output_folder_path.c_str(), directory_name_for_simulation_data_files.c_str());
 	else
 		print_message_and_exit("\nERROR: You must set a different experiment name to avoid overwriting the results\n");
 	// full_directory_name_for_simulation_data_files = "output/"+directory_name_for_simulation_data_files+"/";
@@ -140,15 +140,15 @@ void Simulator::RunSimulation() {
 	srand(simulator_options->run_simulation_general_options->stimulus_presentation_order_seed);
 
 
-	
+
 
 	if (simulator_options->file_storage_options->write_initial_synaptic_weights_to_file_bool) {
-	
+
 		network_state_archive_recording_electrodes->write_initial_synaptic_weights_to_file();
-	
+
 	}
 
-	
+
 	reset_all_recording_electrodes();
 	float current_time_in_seconds;
 
@@ -185,7 +185,7 @@ void Simulator::RunSimulation() {
             }
 
 			perform_post_stimulus_presentation_instructions(epoch_number);
-			
+
 		}
 
 		perform_post_epoch_instructions(epoch_number, epoch_timer);
@@ -196,13 +196,13 @@ void Simulator::RunSimulation() {
         if (spike_analyser)
           spike_analyser->calculate_various_neuron_spike_totals_and_averages(simulator_options->run_simulation_general_options->presentation_time_per_stimulus_per_epoch);
         #endif
-		
+
 	}
 
 	perform_end_of_simulation_instructions(simulation_timer);
 
-        
-	
+
+
 }
 
 
@@ -211,11 +211,11 @@ int* Simulator::setup_stimuli_presentation_order() {
 	int total_number_of_input_stimuli = spiking_model->input_spiking_neurons->total_number_of_input_stimuli;
 	int total_number_of_objects = spiking_model->input_spiking_neurons->total_number_of_objects;
 	int total_number_of_transformations_per_object = spiking_model->input_spiking_neurons->total_number_of_transformations_per_object;
-	
+
 	int* stimuli_presentation_order = (int*)malloc(total_number_of_input_stimuli*sizeof(int));
 
 	// From InputSpikingNeurons
-	
+
 	for (int i = 0; i < total_number_of_input_stimuli; i++){
 		stimuli_presentation_order[i] = i;
 	}
@@ -228,15 +228,15 @@ int* Simulator::setup_stimuli_presentation_order() {
 		}
 
 		case PRESENTATION_FORMAT_OBJECT_BY_OBJECT_RESET_BETWEEN_OBJECTS: case PRESENTATION_FORMAT_OBJECT_BY_OBJECT_NO_RESET: {
-			
+
 			int* object_order_indices = (int*)malloc(total_number_of_objects * sizeof(int));
 
 			for (int object_index = 0; object_index < total_number_of_objects; object_index++) {
-				object_order_indices[object_index] = object_index;			
+				object_order_indices[object_index] = object_index;
 			}
 
 			switch (simulator_options->stimuli_presentation_options->object_order) {
-		
+
 				case OBJECT_ORDER_ORIGINAL:
 
 					break;
@@ -249,16 +249,16 @@ int* Simulator::setup_stimuli_presentation_order() {
 
 			int* transform_order_indices = (int*)malloc(total_number_of_transformations_per_object * sizeof(int));
 			for (int transform_index = 0; transform_index < total_number_of_transformations_per_object; transform_index++) {
-				transform_order_indices[transform_index] = transform_index;			
+				transform_order_indices[transform_index] = transform_index;
 			}
 
 			for (int object_index = 0; object_index < total_number_of_objects; object_index++) {
-				
+
 				if (simulator_options->stimuli_presentation_options->transform_order == TRANSFORM_ORDER_RANDOM) std::random_shuffle(&transform_order_indices[0], &transform_order_indices[total_number_of_transformations_per_object]);
 
 				for (int transform_index = 0; transform_index < total_number_of_transformations_per_object; transform_index++) {
-					stimuli_presentation_order[object_index * total_number_of_transformations_per_object + transform_index] = object_order_indices[object_index] * total_number_of_transformations_per_object + transform_order_indices[transform_index]; 
-				}					
+					stimuli_presentation_order[object_index * total_number_of_transformations_per_object + transform_index] = object_order_indices[object_index] * total_number_of_transformations_per_object + transform_order_indices[transform_index];
+				}
 			}
 
 			break;
@@ -295,26 +295,26 @@ void Simulator::perform_per_timestep_recording_electrode_instructions(float curr
 	if (epoch_number == simulator_options->run_simulation_general_options->specific_epoch_to_pass_to_spike_analyser) {
 
 		if (simulator_options->recording_electrodes_options->count_neuron_spikes_recording_electrodes_bool) {
-		
+
 			count_neuron_spikes_recording_electrodes->add_spikes_to_per_neuron_spike_count(current_time_in_seconds);
-		
+
 		}
 
 		if (simulator_options->recording_electrodes_options->count_input_neuron_spikes_recording_electrodes_bool) {
-		
+
 			count_input_neuron_spikes_recording_electrodes->add_spikes_to_per_neuron_spike_count(current_time_in_seconds);
-		
+
 		}
 
 		if (simulator_options->recording_electrodes_options->collect_neuron_spikes_recording_electrodes_bool){
 
 			collect_neuron_spikes_recording_electrodes->collect_spikes_for_timestep(current_time_in_seconds);
 			collect_neuron_spikes_recording_electrodes->copy_spikes_from_device_to_host_and_reset_device_spikes_if_device_spike_count_above_threshold(current_time_in_seconds, timestep_index, number_of_timesteps_per_stimulus_per_epoch );
-		
+
 		}
 
 		if (simulator_options->recording_electrodes_options->collect_input_neuron_spikes_recording_electrodes_bool) {
-			
+
 			collect_input_neuron_spikes_recording_electrodes->collect_spikes_for_timestep(current_time_in_seconds);
 			collect_input_neuron_spikes_recording_electrodes->copy_spikes_from_device_to_host_and_reset_device_spikes_if_device_spike_count_above_threshold(current_time_in_seconds, timestep_index, number_of_timesteps_per_stimulus_per_epoch );
 
@@ -331,7 +331,7 @@ void Simulator::perform_pre_stimulus_presentation_instructions(int stimulus_inde
 	// printf("simulator_options->stimuli_presentation_options->presentation_format: %d\n", simulator_options->stimuli_presentation_options->presentation_format);
 
 	spiking_model->input_spiking_neurons->current_stimulus_index = stimulus_index;
-	
+
 	switch (simulator_options->stimuli_presentation_options->presentation_format) {
 		case PRESENTATION_FORMAT_OBJECT_BY_OBJECT_RESET_BETWEEN_STIMULI: case PRESENTATION_FORMAT_RANDOM_RESET_BETWEEN_EACH_STIMULUS:
 		{
@@ -377,7 +377,7 @@ void Simulator::perform_post_epoch_instructions(int epoch_number, TimerWithMessa
 
 	printf("Epoch %d, Complete.\n", epoch_number);
 	epoch_timer->stop_timer_and_log_time_and_message(" ", true);
-	
+
 	if (simulator_options->recording_electrodes_options->collect_neuron_spikes_recording_electrodes_bool) {
 		printf(" Number of Spikes: %d\n", collect_neuron_spikes_recording_electrodes->total_number_of_spikes_stored_on_host);
 		if (simulator_options->file_storage_options->save_recorded_neuron_spikes_to_file) collect_neuron_spikes_recording_electrodes->write_spikes_to_file(epoch_number, simulator_options->file_storage_options->network_is_trained);

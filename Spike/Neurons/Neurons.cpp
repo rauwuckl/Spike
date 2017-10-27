@@ -35,9 +35,9 @@ Neurons::~Neurons() {
 
 
 int Neurons::AddGroup(neuron_parameters_struct * group_params){
-	
+
 	number_of_neurons_in_new_group = group_params->group_shape[0] * group_params->group_shape[1];
- 
+
 	if (number_of_neurons_in_new_group < 0) {
 		print_message_and_exit("Error: Group must have at least 1 neuron.");
 	}
@@ -66,7 +66,7 @@ int Neurons::AddGroup(neuron_parameters_struct * group_params){
 	// Extend neuron afferent storage
 	per_neuron_efferent_synapse_count = (int*)realloc(per_neuron_efferent_synapse_count, total_number_of_neurons*sizeof(int));
 	per_neuron_efferent_synapse_indices = (int**)realloc(per_neuron_efferent_synapse_indices, total_number_of_neurons*sizeof(int*));
-	
+
 
 	// Used for event count
 	per_neuron_afferent_synapse_count = (int*)realloc(per_neuron_afferent_synapse_count,(total_number_of_neurons*sizeof(int)));
@@ -75,7 +75,7 @@ int Neurons::AddGroup(neuron_parameters_struct * group_params){
 		per_neuron_efferent_synapse_count[i] = 0;
 		per_neuron_efferent_synapse_indices[i] = nullptr;
 	}
-	
+
 	return new_group_id;
 }
 
@@ -90,4 +90,3 @@ void Neurons::reset_state() {
 }
 
 SPIKE_MAKE_STUB_INIT_BACKEND(Neurons);
-
