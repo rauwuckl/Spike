@@ -34,7 +34,7 @@ public:
 
   SPIKE_ADD_BACKEND_GETSET(ImagePoissonInputSpikingNeurons, PoissonInputSpikingNeurons);
   void init_backend(Context* ctx = _global_ctx) override;
-  
+
   int AddGroup(neuron_parameters_struct * group_params) override;
   void AddGroupForEachGaborType(neuron_parameters_struct * group_params);
 
@@ -44,10 +44,13 @@ public:
   void load_image_names_from_file_list(const char * fileList, const char * inputDirectory);
   void load_gabor_filter_parameters(const char * filterParameters, const char * inputDirectory);
   void load_rates_from_files(const char * inputDirectory, float max_rate_scaling_factor);
+	void create_random_rates_like_in_files(float max_rate_scaling_factor);
   void copy_rates_to_device();
   int calculate_gabor_index(int orientationIndex, int wavelengthIndex, int phaseIndex);
 
   //JI VARIABLES
+	bool make_stimuli_as_random_noise = false;
+	
   float * gabor_input_rates = nullptr;
 
   int total_number_of_phases = 0;
